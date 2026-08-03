@@ -6,7 +6,7 @@ Development plan and architecture: **[PLAN.md](PLAN.md)** · Photo rules (public
 
 ## Status
 
-**Phase 1 complete** — the spreadsheet has been migrated to canonical CSVs with CI validation. Search UI, add-item forms, and photo intake are still to come; see [PLAN.md §5](PLAN.md#5-phases).
+**Phases 1–2 complete** — the spreadsheet is migrated to validated CSVs, and there's a searchable site with printable QR stickers for every location. Add-item forms (Phase 3) and photo intake (Phase 4) are still to come; see [PLAN.md §5](PLAN.md#5-phases).
 
 | | |
 |---|---|
@@ -32,6 +32,22 @@ Two fields carry more weight than they look like they do:
 
 - **`last_verified`** — every migrated row says `2021-08-29`, because that's what the spreadsheet's own sheet names claim. This makes five years of staleness a queryable fact instead of a caveat.
 - **`source`** — `legacy-xlsx`, `manual`, or `photo-llm`. Permanent provenance, so an audit can always ask which rows a model wrote.
+
+## The site
+
+Search UI and QR stickers deploy from `main` to GitHub Pages. Build and preview locally:
+
+```bash
+python3 scripts/build_site.py && python3 scripts/make_qr_labels.py
+```
+
+That writes `_site/index.html` (self-contained — just open it, no server needed) and `_site/labels.html`, a printable sheet of QR stickers. Each sticker encodes `<site>/#<location_id>`, so scanning the one on a drawer shows that drawer's contents, including anything nested inside it.
+
+Stickers for just part of the lab:
+
+```bash
+python3 scripts/make_qr_labels.py --rooms 213 --kinds drawer cabinet
+```
 
 ## Working with it
 

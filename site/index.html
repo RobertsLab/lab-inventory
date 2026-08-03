@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Roberts Lab Inventory</title>
+<style>
+:root {
+  --bg: #fbfbfa; --panel: #fff; --line: #e4e2dd; --ink: #22201d;
+  --dim: #6b675f; --accent: #1f6f5c; --accent-soft: #e6f1ed;
+  --warn: #8a5a1a; --warn-soft: #fdf1de; --radius: 9px;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #17181a; --panel: #1f2124; --line: #33363b; --ink: #e9e7e3;
+    --dim: #9c9891; --accent: #6cc0a4; --accent-soft: #1e3a32;
+    --warn: #e0b070; --warn-soft: #3a2f1c;
+  }
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+.wrap { max-width: 900px; margin: 0 auto; padding: 0 14px 64px; }
+
+header { padding: 22px 0 12px; }
+h1 { font-size: 1.3rem; margin: 0 0 2px; letter-spacing: -0.01em; }
+.sub { color: var(--dim); font-size: 0.85rem; }
+.sub a { color: var(--dim); }
+
+/* Sticky search so it stays reachable while scrolling a long result list. */
+.searchbar {
+  position: sticky; top: 0; z-index: 20; background: var(--bg);
+  padding: 10px 0; border-bottom: 1px solid var(--line);
+}
+#q {
+  width: 100%; padding: 13px 14px; font-size: 1.05rem; color: var(--ink);
+  background: var(--panel); border: 1px solid var(--line);
+  border-radius: var(--radius); -webkit-appearance: none;
+}
+#q:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+.filters { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 8px; }
+select {
+  flex: 1 1 auto; min-width: 0; padding: 8px 9px; font-size: 0.85rem;
+  color: var(--ink); background: var(--panel); border: 1px solid var(--line);
+  border-radius: 7px;
+}
+.count { color: var(--dim); font-size: 0.8rem; margin: 10px 0 6px; }
+.count b { color: var(--ink); }
+
+/* Location context banner, shown when the URL carries a #location-id --
+   this is what a scanned QR sticker lands on. */
+.locbar {
+  display: none; margin: 12px 0 0; padding: 12px 14px;
+  background: var(--accent-soft); border: 1px solid var(--accent);
+  border-radius: var(--radius);
+}
+.locbar.on { display: block; }
+.locbar .path { font-size: 0.78rem; color: var(--dim); }
+.locbar .lid {
+  font: 600 1.02rem/1.35 ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.locbar .clear {
+  display: inline-block; margin-top: 7px; font-size: 0.8rem;
+  color: var(--accent); text-decoration: none; font-weight: 600;
+}
+
+.stale {
+  margin: 12px 0 0; padding: 10px 13px; font-size: 0.82rem;
+  background: var(--warn-soft); color: var(--warn);
+  border: 1px solid currentColor; border-radius: var(--radius);
+}
+
+ul.results { list-style: none; margin: 0; padding: 0; }
+li.item {
+  background: var(--panel); border: 1px solid var(--line);
+  border-radius: var(--radius); padding: 11px 13px; margin-bottom: 7px;
+}
+.name { font-weight: 600; }
+.meta {
+  display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center;
+  margin-top: 5px; font-size: 0.79rem; color: var(--dim);
+}
+.chip {
+  padding: 1px 7px; border-radius: 20px; background: var(--accent-soft);
+  color: var(--accent); font-weight: 600; font-size: 0.72rem;
+  text-transform: uppercase; letter-spacing: 0.03em;
+}
+.chip.unverified { background: var(--warn-soft); color: var(--warn); }
+a.loc {
+  color: var(--ink); text-decoration: none; border-bottom: 1px dotted var(--dim);
+  font: 0.79rem ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+a.loc:hover { color: var(--accent); }
+.note { margin-top: 5px; font-size: 0.79rem; color: var(--dim); }
+mark { background: #ffe9a8; color: #3b2c05; border-radius: 2px; padding: 0 1px; }
+@media (prefers-color-scheme: dark) { mark { background: #6b5518; color: #ffeec2; } }
+
+.empty { padding: 34px 8px; text-align: center; color: var(--dim); }
+.empty b { color: var(--ink); }
+footer {
+  margin-top: 26px; padding-top: 14px; border-top: 1px solid var(--line);
+  font-size: 0.78rem; color: var(--dim);
+}
+footer a { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>Roberts Lab Inventory</h1>
+  <div class="sub">
+    <span id="generated"></span> ·
+    <a href="https://github.com/RobertsLab/lab-inventory">source</a>
+  </div>
+</header>
+
+<div class="searchbar">
+  <input id="q" type="search" autocomplete="off" autocapitalize="off"
+         spellcheck="false" placeholder="Search items, kits, locations…"
+         aria-label="Search inventory">
+  <div class="filters">
+    <select id="room" aria-label="Filter by room"></select>
+    <select id="cat" aria-label="Filter by category"></select>
+    <select id="status" aria-label="Filter by status"></select>
+  </div>
+</div>
+
+<div id="locbar" class="locbar">
+  <div class="path" id="locpath"></div>
+  <div class="lid" id="loclabel"></div>
+  <a class="clear" href="#">← show everything</a>
+</div>
+
+<div id="stale" class="stale" hidden></div>
+<div class="count" id="count"></div>
+<ul class="results" id="results"></ul>
+<div class="empty" id="empty" hidden></div>
+
+<footer>
+  Every item still says <b>unverified</b> until someone lays eyes on it.
+  See the <a href="https://github.com/RobertsLab/lab-inventory/blob/main/PLAN.md">plan</a>
+  for how verification works. ·
+  <a href="labels.html">printable QR labels</a>
+</footer>
+
+</div>
+
+<script>
+const DATA = /*__INVENTORY_DATA__*/null;
+
+const locById = new Map(DATA.locations.map(l => [l.id, l]));
+const roomById = new Map(DATA.rooms.map(r => [r.id, r]));
+
+// Precompute one lowercase haystack per item so keystroke filtering is a
+// straight scan -- at this size that is faster than any index would be, and
+// there is no library to vendor or keep alive.
+const ROWS = DATA.items.map(it => {
+  const loc = locById.get(it.l);
+  const hay = [it.n, it.c, it.nt, it.o, it.v, it.cat, it.l,
+               loc ? loc.label : '', loc ? loc.path : '']
+              .filter(Boolean).join(' ').toLowerCase();
+  return {it, loc, hay, name: (it.n || '').toLowerCase()};
+});
+
+const el = id => document.getElementById(id);
+const state = {q: '', room: '', cat: '', status: '', loc: ''};
+
+function fillSelect(node, blank, values, labeller) {
+  node.innerHTML = '';
+  const opts = [[' ', blank]].concat(values.map(v => [v, labeller(v)]));
+  for (const [value, text] of opts) {
+    const opt = document.createElement('option');
+    opt.value = value === ' ' ? '' : value;
+    opt.textContent = text;
+    node.appendChild(opt);
+  }
+}
+
+function setup() {
+  el('generated').textContent =
+    `${DATA.items.length} items · ${DATA.locations.length} locations · built ${DATA.generated}`;
+
+  const rooms = [...new Set(DATA.locations.map(l => l.room))].sort();
+  fillSelect(el('room'), 'All rooms', rooms,
+    r => (roomById.get(r) || {}).label || r);
+
+  const cats = [...new Set(DATA.items.map(i => i.c).filter(Boolean))].sort();
+  fillSelect(el('cat'), 'All categories', cats, c => c);
+
+  const statuses = [...new Set(DATA.items.map(i => i.s).filter(Boolean))].sort();
+  fillSelect(el('status'), 'Any status', statuses, s => s);
+
+  const unverified = DATA.items.filter(i => i.s === 'unverified').length;
+  if (unverified) {
+    const box = el('stale');
+    box.hidden = false;
+    box.textContent = `${unverified} of ${DATA.items.length} items have never been `
+      + `verified since the spreadsheet was migrated. Treat locations as a `
+      + `strong hint, not a promise.`;
+  }
+
+  el('q').addEventListener('input', e => { state.q = e.target.value; render(); });
+  for (const key of ['room', 'cat', 'status']) {
+    el(key).addEventListener('change', e => { state[key] = e.target.value; render(); });
+  }
+  window.addEventListener('hashchange', readHash);
+  readHash();
+}
+
+// A QR sticker encodes <site>/#209-CAB-01, so the hash is the location filter.
+function readHash() {
+  const raw = decodeURIComponent(location.hash.replace(/^#/, '')).trim();
+  state.loc = locById.has(raw) ? raw : '';
+  const bar = el('locbar');
+  bar.classList.toggle('on', !!state.loc);
+  if (state.loc) {
+    const loc = locById.get(state.loc);
+    el('locpath').textContent = loc.path || '';
+    el('loclabel').textContent = `${loc.id} — ${loc.label}`;
+  }
+  render();
+}
+
+function score(row, tokens) {
+  let total = 0;
+  for (const token of tokens) {
+    const inName = row.name.indexOf(token);
+    if (inName === 0) total += 100;
+    else if (inName > 0) total += 55;
+    else if (row.hay.indexOf(token) >= 0) total += 12;
+    else return -1;            // every token must match somewhere
+  }
+  return total;
+}
+
+function highlight(text, tokens) {
+  if (!text) return '';
+  let html = '', rest = text;
+  // Longest first so overlapping tokens don't fragment the markup oddly.
+  const sorted = [...tokens].sort((a, b) => b.length - a.length);
+  outer: while (rest) {
+    for (const token of sorted) {
+      if (rest.toLowerCase().startsWith(token)) {
+        html += '<mark>' + esc(rest.slice(0, token.length)) + '</mark>';
+        rest = rest.slice(token.length);
+        continue outer;
+      }
+    }
+    html += esc(rest[0]);
+    rest = rest.slice(1);
+  }
+  return html;
+}
+
+const esc = s => s.replace(/[&<>"']/g, c =>
+  ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
+
+function render() {
+  const tokens = state.q.toLowerCase().split(/\s+/).filter(Boolean);
+  const descendants = state.loc ? descendantsOf(state.loc) : null;
+
+  let hits = [];
+  for (const row of ROWS) {
+    if (state.room && (!row.loc || row.loc.room !== state.room)) continue;
+    if (state.cat && row.it.c !== state.cat) continue;
+    if (state.status && row.it.s !== state.status) continue;
+    if (descendants && !descendants.has(row.it.l)) continue;
+    const points = tokens.length ? score(row, tokens) : 0;
+    if (points < 0) continue;
+    hits.push({row, points});
+  }
+
+  hits.sort((a, b) => b.points - a.points ||
+    a.row.name.localeCompare(b.row.name));
+
+  el('count').innerHTML = `<b>${hits.length}</b> of ${ROWS.length} items`;
+
+  const list = el('results');
+  const empty = el('empty');
+  if (!hits.length) {
+    list.innerHTML = '';
+    empty.hidden = false;
+    empty.innerHTML = tokens.length
+      ? `Nothing matches <b>${esc(state.q)}</b>.<br>`
+        + `It may simply never have been recorded — the spreadsheet was last `
+        + `updated in 2021.`
+      : 'No items match these filters.';
+    return;
+  }
+  empty.hidden = true;
+
+  // One innerHTML write beats 500 DOM insertions.
+  list.innerHTML = hits.slice(0, 400).map(({row}) => {
+    const it = row.it, loc = row.loc;
+    const bits = [];
+    bits.push(`<span class="chip${it.s === 'unverified' ? ' unverified' : ''}">`
+      + `${esc(it.c || 'other')}</span>`);
+    if (loc) {
+      bits.push(`<a class="loc" href="#${encodeURIComponent(loc.id)}" `
+        + `title="${esc(loc.path)}">${esc(loc.id)}</a>`);
+      bits.push(`<span>${esc(loc.label)}</span>`);
+    }
+    if (it.q) bits.push(`<span>qty ${esc(it.q)}${it.u ? ' ' + esc(it.u) : ''}</span>`);
+    if (it.r) bits.push(`<span>rec’d ${esc(it.r)}</span>`);
+    if (it.e) bits.push(`<span>expires ${esc(it.e)}</span>`);
+    if (it.o) bits.push(`<span>${esc(it.o)}</span>`);
+    return `<li class="item"><div class="name">`
+      + `${highlight(it.n || '', tokens)}</div>`
+      + `<div class="meta">${bits.join('')}</div>`
+      + (it.nt ? `<div class="note">${highlight(it.nt, tokens)}</div>` : '')
+      + `</li>`;
+  }).join('');
+
+  if (hits.length > 400) {
+    list.insertAdjacentHTML('beforeend',
+      `<li class="empty">Showing the first 400. Narrow the search to see more.</li>`);
+  }
+}
+
+// A location filter should include everything nested inside it, so filtering
+// by a freezer shows the contents of all its shelves and drawers.
+function descendantsOf(rootId) {
+  const keep = new Set([rootId]);
+  let grew = true;
+  while (grew) {
+    grew = false;
+    for (const loc of DATA.locations) {
+      if (loc.parent && keep.has(loc.parent) && !keep.has(loc.id)) {
+        keep.add(loc.id);
+        grew = true;
+      }
+    }
+  }
+  return keep;
+}
+
+setup();
+</script>
+</body>
+</html>
