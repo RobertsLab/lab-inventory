@@ -5,12 +5,14 @@ on:
     paths:
       - "data/**"
       - "scripts/**"
+      - ".github/ISSUE_TEMPLATE/**"
       - ".github/workflows/validate.yml"
   push:
     branches: [main]
     paths:
       - "data/**"
       - "scripts/**"
+      - ".github/ISSUE_TEMPLATE/**"
   workflow_dispatch:
 
 permissions:
@@ -31,10 +33,16 @@ jobs:
       - name: Validate data/*.csv
         run: python3 scripts/validate.py
 
+      - run: pip install -q -r requirements.txt
+
+      # Issue-form labels are the parser's contract; a rename would silently
+      # drop the field rather than fail.
+      - name: Check issue forms match the parser
+        run: python3 scripts/check_forms.py
+
       - name: Check migration is reproducible
         if: github.event_name == 'pull_request'
         run: |
-          pip install -q -r requirements.txt
           python3 scripts/migrate_legacy.py --out /tmp/regen > /dev/null
           # The legacy spreadsheet is frozen, so re-running the migration must
           # reproduce byte-identical output. A diff here means either the

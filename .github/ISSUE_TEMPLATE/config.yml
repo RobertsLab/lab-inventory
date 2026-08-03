@@ -1,0 +1,11 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Search the inventory
+    url: https://robertslab.github.io/lab-inventory/
+    about: Before filing anything, check whether it's already recorded.
+  - name: Printable QR stickers
+    url: https://robertslab.github.io/lab-inventory/labels.html
+    about: One per location. Scan a drawer to see its contents.
+  - name: How the system works
+    url: https://github.com/RobertsLab/lab-inventory/blob/main/PLAN.md
+    about: Data model, phases, and why it's built this way.

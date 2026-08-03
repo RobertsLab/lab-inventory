@@ -6,7 +6,7 @@ Development plan and architecture: **[PLAN.md](PLAN.md)** · Photo rules (public
 
 ## Status
 
-**Phases 1–2 complete** — the spreadsheet is migrated to validated CSVs, and there's a searchable site with printable QR stickers for every location. Add-item forms (Phase 3) and photo intake (Phase 4) are still to come; see [PLAN.md §5](PLAN.md#5-phases).
+**Phases 1–3 complete** — the spreadsheet is migrated to validated CSVs, there's a searchable site with printable QR stickers, and you can add or update items from a form without touching git. Photo intake with LLM descriptions (Phase 4) is still to come; see [PLAN.md §5](PLAN.md#5-phases).
 
 | | |
 |---|---|
@@ -32,6 +32,22 @@ Two fields carry more weight than they look like they do:
 
 - **`last_verified`** — every migrated row says `2021-08-29`, because that's what the spreadsheet's own sheet names claim. This makes five years of staleness a queryable fact instead of a caveat.
 - **`source`** — `legacy-xlsx`, `manual`, or `photo-llm`. Permanent provenance, so an audit can always ask which rows a model wrote.
+
+## Adding or changing something
+
+You don't need git, and you don't need to know the file layout. File an issue:
+
+| | |
+|---|---|
+| [Add an item](../../issues/new?template=add-item.yml) | Something new in the lab |
+| [Mark consumed / low / missing](../../issues/new?template=update-status.yml) | You used the last of it, or it isn't where we say |
+| [I verified a location](../../issues/new?template=verify-location.yml) | You opened a drawer and checked. **The most valuable thing you can file.** |
+
+A bot turns the form into a pull request for a maintainer to merge. If something's wrong with the form — unknown location, a name matching five items — it comments on your issue and changes nothing.
+
+The fastest path is from the shelf itself: **scan the QR sticker → tap "Add an item here"**, and the location arrives already filled in.
+
+Only the first three fields of the add form are required. A name and a location is already a useful record — don't stall on catalog numbers.
 
 ## The site
 

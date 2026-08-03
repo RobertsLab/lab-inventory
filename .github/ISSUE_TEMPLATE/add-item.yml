@@ -1,0 +1,113 @@
+name: Add an item
+description: Record something new in the lab. Takes about 30 seconds.
+title: "Add an item"
+labels: ["inventory", "inventory:add"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Only the first three fields are required. **Don't stall on the rest** —
+        a name and a location is already a useful record, and anything missing
+        can be filled in later.
+
+        Easiest way to get the location right: scan the QR sticker on the
+        drawer and tap **add an item here**, which fills it in for you.
+
+  # id: location -- prefillable via ?location=213-DRW-27
+  - type: input
+    id: location
+    attributes:
+      label: Location
+      description: "Location id, e.g. 209-CAB-01 or 213-F20-S02-D08"
+      placeholder: 213-DRW-27
+    validations:
+      required: true
+
+  - type: input
+    id: name
+    attributes:
+      label: Item name
+      description: What it says on the label. Include the vendor's product name if you can.
+      placeholder: DNeasy Blood & Tissue Kit (50)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Category
+      options:
+        - kit
+        - reagent
+        - enzyme
+        - consumable
+        - sample
+        - equipment
+        - tool
+        - media
+        - antibody
+        - glassware
+        - office
+        - other
+      default: 11
+    validations:
+      required: true
+
+  - type: input
+    id: quantity
+    attributes:
+      label: Quantity
+      description: A plain number. Anything fuzzy ("about half a box") goes in Notes.
+      placeholder: "2"
+
+  - type: input
+    id: unit
+    attributes:
+      label: Unit
+      placeholder: boxes
+
+  - type: input
+    id: received
+    attributes:
+      label: Date received
+      description: "YYYY-MM-DD. Partial is fine — 2026-08 or just 2026."
+      placeholder: "2026-08-03"
+
+  - type: input
+    id: expires
+    attributes:
+      label: Expires
+      description: Worth filling in for reagents and kits — it drives the expiry report.
+      placeholder: "2027-06"
+
+  - type: input
+    id: vendor
+    attributes:
+      label: Vendor
+      placeholder: Qiagen
+
+  - type: input
+    id: catalog
+    attributes:
+      label: Catalog number
+      placeholder: "69504"
+
+  - type: input
+    id: lot
+    attributes:
+      label: Lot
+      placeholder: "166019327"
+
+  - type: input
+    id: owner
+    attributes:
+      label: Owner
+      description: Only if this belongs to one person or project rather than the lab.
+      placeholder: Goetz
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
+      description: Anything that doesn't fit above — condition, where exactly in the drawer, what it's for.
+      placeholder: In the cardboard box at the back. Opened, roughly half used.

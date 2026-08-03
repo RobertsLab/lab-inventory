@@ -1,0 +1,45 @@
+name: I verified a location
+description: You opened a drawer and checked what's actually in it. This is the most valuable thing you can file.
+title: "Verify a location"
+labels: ["inventory", "inventory:verify"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Every item migrated from the old spreadsheet is marked **unverified** —
+        the data is from 2021 and nobody has confirmed it since. Filing this
+        turns guesses into facts for one location at a time.
+
+        Takes two minutes: open the drawer, compare against
+        [the list](https://robertslab.github.io/lab-inventory/), file this.
+
+  # id: location -- prefillable via ?location=213-DRW-27
+  - type: input
+    id: location
+    attributes:
+      label: Location
+      description: Just this one location — verifying a shelf doesn't verify the drawers inside it.
+      placeholder: 213-DRW-27
+    validations:
+      required: true
+
+  - type: textarea
+    id: missing
+    attributes:
+      label: Anything missing
+      description: >
+        One per line, as listed on the site. These get marked `missing`;
+        everything else at this location gets marked `present`. Leave empty if
+        the list was accurate.
+      placeholder: |
+        EZ DNA methylation-gold kit
+        RNeasy plus micro kit
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Anything there that isn't listed
+      description: >
+        Note it here and it'll be picked up in review — or file separate
+        *Add an item* issues, which is faster to process.
+      placeholder: Two boxes of P1000 tips, unopened.
