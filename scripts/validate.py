@@ -27,7 +27,8 @@ ITEM_FIELDS = [
     "last_verified", "verified_by", "owner", "source", "photo_id", "notes",
 ]
 LOCATION_FIELDS = [
-    "location_id", "room", "kind", "number", "parent_id", "label", "notes",
+    "location_id", "room", "kind", "number", "parent_id", "label",
+    "last_verified", "verified_by", "notes",
 ]
 REVIEW_FIELDS = [
     "reason", "sheet", "row", "location_id", "raw_text", "suggestion", "notes",
@@ -151,6 +152,8 @@ class Validator:
             if not row["label"]:
                 self.warn("locations.csv", line,
                           f"{lid} has no label; QR stickers will be unreadable")
+            self.check_date("locations.csv", line, "last_verified",
+                           row["last_verified"])
 
         # Referential integrity and cycle detection on the parent chain.
         parents = {r["location_id"]: r["parent_id"] for r in locations}
@@ -244,6 +247,10 @@ class Validator:
         empty_locations = [
             l for l in locations
             if l["location_id"] not in {i["location_id"] for i in items}]
+        # Locations carry their own verification date, so a drawer confirmed
+        # still-empty counts as checked even though it has no item rows.
+        stale_locations = [
+            l for l in locations if (l["last_verified"] or "0000") < cutoff]
 
         print(f"items                {len(items)}")
         print(f"locations            {len(locations)}")
@@ -255,7 +262,10 @@ class Validator:
               f"({100 * len(unverified) // len(items)}%)")
         print(f"not verified in 1y   {len(stale)} "
               f"({100 * len(stale) // len(items)}%)")
-        print(f"locations w/o items  {len(empty_locations)}")
+        print(f"locations stale >1y  {len(stale_locations)} "
+              f"({100 * len(stale_locations) // max(len(locations), 1)}%)")
+        print(f"locations w/o items  {len(empty_locations)} "
+              f"(verifiable as still-empty)")
         print("by category:         " + ", ".join(
             f"{c}={n}" for c, n in Counter(
                 i["category"] for i in items).most_common()))

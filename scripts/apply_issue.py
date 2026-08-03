@@ -36,6 +36,10 @@ ITEM_FIELDS = [
     "vendor", "catalog_no", "lot", "received", "expires", "status",
     "last_verified", "verified_by", "owner", "source", "photo_id", "notes",
 ]
+LOCATION_FIELDS = [
+    "location_id", "room", "kind", "number", "parent_id", "label",
+    "last_verified", "verified_by", "notes",
+]
 CATEGORIES = {
     "kit", "reagent", "enzyme", "consumable", "sample", "equipment", "tool",
     "media", "antibody", "glassware", "office", "other",
@@ -92,7 +96,19 @@ def write_items(path: Path, rows: list[dict]) -> None:
 
 def read_locations(path: Path) -> dict[str, dict]:
     with path.open(newline="") as handle:
-        return {r["location_id"]: r for r in csv.DictReader(handle)}
+        reader = csv.DictReader(handle)
+        if reader.fieldnames != LOCATION_FIELDS:
+            raise SystemExit(f"{path}: unexpected header {reader.fieldnames}")
+        return {r["location_id"]: r for r in reader}
+
+
+def write_locations(path: Path, locations: dict[str, dict]) -> None:
+    # dict order is insertion order, which is file order, so rows stay put and
+    # the diff shows only the fields that actually changed.
+    with path.open("w", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=LOCATION_FIELDS)
+        writer.writeheader()
+        writer.writerows(locations.values())
 
 
 def resolve_location(raw: str, locations: dict[str, dict]) -> str:
@@ -284,11 +300,14 @@ def handle_verify(form: dict, rows: list[dict], locations: dict[str, dict],
     # not verifying the drawers inside it, and claiming otherwise would put
     # false confidence into the data.
     at_location = [r for r in rows if r["location_id"] == location_id]
-    if not at_location:
-        raise UserError(
-            f"`{location_id}` has no items recorded, so there's nothing to "
-            f"verify. If you found things there, file *Add an item* issues "
-            f"instead.")
+
+    # The location row is stamped whether or not it holds anything. "I opened
+    # this drawer and it is still empty" is real information, and before
+    # locations carried their own last_verified it had nowhere to live -- which
+    # made the 46 empty locations the one thing nobody could log.
+    location = locations[location_id]
+    location["last_verified"] = TODAY
+    location["verified_by"] = author
 
     missing_raw = (form.get("anything missing") or "").strip()
     missing_names = [
@@ -312,12 +331,18 @@ def handle_verify(form: dict, rows: list[dict], locations: dict[str, dict],
     body = [
         f"Verification pass from the issue form.\n",
         f"| field | value |\n|---|---|",
-        f"| location | `{location_id}` — {locations[location_id]['label']} |",
+        f"| location | `{location_id}` — {location['label']} |",
         f"| confirmed present | {len(verified)} |",
         f"| marked missing | {len(marked_missing)} |",
         f"| verified_by | {author} |",
         f"| last_verified | {TODAY} |\n",
     ]
+    if not at_location:
+        body.append(
+            "**Confirmed still empty.** Nothing was recorded here and nothing "
+            "was found, so only the location's own `last_verified` moved. This "
+            "is a real result, not a no-op — it retires a location from the "
+            "unknown pile.\n")
     if marked_missing:
         body.append("Marked missing:\n" + "\n".join(
             f"- `{r['item_id']}` {r['name']}" for r in marked_missing) + "\n")
@@ -347,6 +372,31 @@ HANDLERS = {
     "inventory:verify": handle_verify,
 }
 
+# Which heading identifies each form, if the labels aren't there to tell us.
+# GitHub issue forms only apply labels that ALREADY EXIST in the repo -- a
+# label named in the form's `labels:` that hasn't been created is silently
+# dropped. That once made every filed form a no-op with no error anywhere: the
+# workflow's label gate just skipped, and the person who filed it saw nothing.
+# So the label is a hint, not the contract; the body is the contract.
+BODY_SIGNATURES = [
+    ("inventory:status", "new status"),
+    ("inventory:verify", "anything missing"),
+    ("inventory:add", "item name"),
+]
+
+
+def infer_action(labels: set[str], form: dict) -> str | None:
+    """Resolve the action from labels, falling back to the form's own shape."""
+    tagged = labels & set(HANDLERS)
+    if len(tagged) == 1:
+        return tagged.pop()
+    if len(tagged) > 1:
+        raise SystemExit(f"issue carries conflicting labels: {sorted(tagged)}")
+    for action, heading in BODY_SIGNATURES:
+        if heading in form:
+            return action
+    return None
+
 
 def main() -> None:
     root = Path(__file__).resolve().parent.parent
@@ -367,18 +417,21 @@ def main() -> None:
     author = issue.get("user", {}).get("login", "unknown")
     number = issue.get("number", 0)
 
-    actions = labels & set(HANDLERS)
-    if len(actions) != 1:
-        raise SystemExit(
-            f"expected exactly one inventory:* label, found {sorted(actions)}")
-    action = actions.pop()
+    form = parse_form(issue.get("body", ""))
+    args.out_dir.mkdir(parents=True, exist_ok=True)
+
+    action = infer_action(labels, form)
+    if action is None:
+        # An ordinary issue, not one of our forms. Exit 3 so the workflow can
+        # treat it as a clean no-op rather than a failure.
+        print("not an inventory form issue; nothing to do")
+        sys.exit(3)
+    # The workflow reads this to backfill the label when the form couldn't.
+    (args.out_dir / "action.txt").write_text(action)
 
     items_path = args.data / "items.csv"
     rows = read_items(items_path)
     locations = read_locations(args.data / "locations.csv")
-    form = parse_form(issue.get("body", ""))
-
-    args.out_dir.mkdir(parents=True, exist_ok=True)
     try:
         title, body = HANDLERS[action](form, rows, locations, author)
     except UserError as err:
@@ -389,6 +442,9 @@ def main() -> None:
         sys.exit(2)
 
     write_items(items_path, rows)
+    # Rewritten unconditionally: only the verify handler touches locations, and
+    # an unchanged rewrite is byte-identical, so git shows no diff.
+    write_locations(args.data / "locations.csv", locations)
     (args.out_dir / "pr_title.txt").write_text(title)
     (args.out_dir / "pr_body.md").write_text(
         f"{body}\n\nFiled by @{author} in #{number}.\n\n"

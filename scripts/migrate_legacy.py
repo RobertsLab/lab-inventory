@@ -41,7 +41,8 @@ ITEM_FIELDS = [
     "last_verified", "verified_by", "owner", "source", "photo_id", "notes",
 ]
 LOCATION_FIELDS = [
-    "location_id", "room", "kind", "number", "parent_id", "label", "notes",
+    "location_id", "room", "kind", "number", "parent_id", "label",
+    "last_verified", "verified_by", "notes",
 ]
 REVIEW_FIELDS = [
     "reason", "sheet", "row", "location_id", "raw_text", "suggestion", "notes",
@@ -271,6 +272,10 @@ class Migration:
         self.locations[location_id] = {
             "location_id": location_id, "room": room, "kind": kind,
             "number": number, "parent_id": parent_id, "label": label,
+            # The 2021 spreadsheet enumerated these places, so it asserted they
+            # existed as recorded on that date -- same provenance as the items.
+            # verified_by stays empty: the sheet never said who walked the lab.
+            "last_verified": LEGACY_VERIFIED, "verified_by": "",
             "notes": notes,
         }
         return location_id
