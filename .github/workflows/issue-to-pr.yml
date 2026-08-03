@@ -16,12 +16,17 @@ concurrency:
 
 jobs:
   apply:
-    # Only inventory forms, and only from people with repo access. This repo is
-    # public, so without the author check anyone on the internet could open
-    # issues that spawn branches and PRs. Merge still requires human review
-    # either way -- this is about spam, not privilege.
+    # Only from people with repo access. This repo is public, so without the
+    # author check anyone on the internet could open issues that spawn branches
+    # and PRs. Merge still requires human review either way -- this is about
+    # spam, not privilege.
+    #
+    # Deliberately NOT gated on the `inventory` label. Issue forms silently drop
+    # labels that don't exist in the repo yet, so a label gate here turns a
+    # missing label into an invisible no-op -- no PR, no comment, no error, and
+    # a confused person who thinks they filed something. apply_issue.py
+    # recognises its own forms from the body and exits 3 for anything else.
     if: >
-      contains(github.event.issue.labels.*.name, 'inventory') &&
       contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'),
                github.event.issue.author_association)
     runs-on: ubuntu-latest
@@ -31,6 +36,21 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+
+      # Idempotent, and the reason a fresh clone of this repo works: the forms
+      # can only apply labels that already exist.
+      - name: Ensure the inventory labels exist
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh label create inventory        --color 0e8a6a --force \
+            --description "Filed through an inventory issue form"
+          gh label create inventory:add    --color 1d76db --force \
+            --description "Add a new item (drives issue-to-pr)"
+          gh label create inventory:status --color fbca04 --force \
+            --description "Change an item status (drives issue-to-pr)"
+          gh label create inventory:verify --color 5319e7 --force \
+            --description "Verification pass on a location (drives issue-to-pr)"
 
       # apply_issue.py reads GITHUB_EVENT_PATH itself. Issue text is never
       # interpolated into a run: block -- `${{ github.event.issue.body }}` in a
@@ -44,6 +64,22 @@ jobs:
           echo "code=$code" >> "$GITHUB_OUTPUT"
           exit 0
 
+      - name: Not an inventory form — stop quietly
+        if: steps.apply.outputs.code == '3'
+        run: echo "::notice::not an inventory form issue; nothing to do"
+
+      # Backfill what the form couldn't apply, so filtering and future tooling
+      # can rely on the labels even though dispatch no longer does.
+      - name: Label the issue if the form couldn't
+        if: steps.apply.outputs.code == '0'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NUMBER: ${{ github.event.issue.number }}
+        run: |
+          gh issue edit "$NUMBER" \
+            --add-label inventory \
+            --add-label "$(cat "$RUNNER_TEMP/pr/action.txt")"
+
       - name: Report a form problem back to the issue
         if: steps.apply.outputs.code == '2'
         env:
@@ -54,8 +90,13 @@ jobs:
           echo "::error::the issue form needs fixing; commented on #$NUMBER"
           exit 1
 
+      # 0 = applied, 2 = reported to the issue above, 3 = not our form.
+      # Anything else is a real bug and should be loud.
       - name: Fail on any other error
-        if: steps.apply.outputs.code != '0'
+        if: >
+          steps.apply.outputs.code != '0' &&
+          steps.apply.outputs.code != '2' &&
+          steps.apply.outputs.code != '3'
         run: |
           echo "::error::apply_issue.py exited ${{ steps.apply.outputs.code }}"
           exit 1
@@ -64,9 +105,11 @@ jobs:
       # GITHUB_TOKEN does not trigger other workflows, so validate.yml will not
       # run on it -- this step is the gate.
       - name: Validate the result
+        if: steps.apply.outputs.code == '0'
         run: python3 scripts/validate.py
 
       - name: Open the pull request
+        if: steps.apply.outputs.code == '0'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NUMBER: ${{ github.event.issue.number }}

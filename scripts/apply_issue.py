@@ -372,6 +372,31 @@ HANDLERS = {
     "inventory:verify": handle_verify,
 }
 
+# Which heading identifies each form, if the labels aren't there to tell us.
+# GitHub issue forms only apply labels that ALREADY EXIST in the repo -- a
+# label named in the form's `labels:` that hasn't been created is silently
+# dropped. That once made every filed form a no-op with no error anywhere: the
+# workflow's label gate just skipped, and the person who filed it saw nothing.
+# So the label is a hint, not the contract; the body is the contract.
+BODY_SIGNATURES = [
+    ("inventory:status", "new status"),
+    ("inventory:verify", "anything missing"),
+    ("inventory:add", "item name"),
+]
+
+
+def infer_action(labels: set[str], form: dict) -> str | None:
+    """Resolve the action from labels, falling back to the form's own shape."""
+    tagged = labels & set(HANDLERS)
+    if len(tagged) == 1:
+        return tagged.pop()
+    if len(tagged) > 1:
+        raise SystemExit(f"issue carries conflicting labels: {sorted(tagged)}")
+    for action, heading in BODY_SIGNATURES:
+        if heading in form:
+            return action
+    return None
+
 
 def main() -> None:
     root = Path(__file__).resolve().parent.parent
@@ -392,18 +417,21 @@ def main() -> None:
     author = issue.get("user", {}).get("login", "unknown")
     number = issue.get("number", 0)
 
-    actions = labels & set(HANDLERS)
-    if len(actions) != 1:
-        raise SystemExit(
-            f"expected exactly one inventory:* label, found {sorted(actions)}")
-    action = actions.pop()
+    form = parse_form(issue.get("body", ""))
+    args.out_dir.mkdir(parents=True, exist_ok=True)
+
+    action = infer_action(labels, form)
+    if action is None:
+        # An ordinary issue, not one of our forms. Exit 3 so the workflow can
+        # treat it as a clean no-op rather than a failure.
+        print("not an inventory form issue; nothing to do")
+        sys.exit(3)
+    # The workflow reads this to backfill the label when the form couldn't.
+    (args.out_dir / "action.txt").write_text(action)
 
     items_path = args.data / "items.csv"
     rows = read_items(items_path)
     locations = read_locations(args.data / "locations.csv")
-    form = parse_form(issue.get("body", ""))
-
-    args.out_dir.mkdir(parents=True, exist_ok=True)
     try:
         title, body = HANDLERS[action](form, rows, locations, author)
     except UserError as err:

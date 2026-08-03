@@ -184,6 +184,19 @@ Two things to know about how this is wired:
 
 Because the repo is public, the workflow only runs for `OWNER`/`MEMBER`/`COLLABORATOR` authors. Without that, anyone could open issues that spawn branches and PRs. Review still gates merging either way — the author check is about spam, not privilege.
 
+#### The label trap, and why dispatch no longer depends on labels
+
+**GitHub issue forms only apply labels that already exist in the repo.** A label named in a form's `labels:` that hasn't been created is silently dropped — no warning at form-render time, no error on submission.
+
+This bit immediately. The four `inventory*` labels had never been created, so the first real filed form (#5) arrived with **zero labels**, the workflow's label gate skipped the run, and the outcome was the worst possible: no PR, no comment, no failed check, and someone reasonably assuming they'd filed something. The only trace was a `skipped` run nobody would think to look at.
+
+Two changes so it can't recur:
+
+- **The body is the contract, not the label.** `apply_issue.py` identifies its own forms from their headings (`### New status` → status, `### Anything missing` → verify, `### Item name` → add) and exits 3 for anything that isn't one, which the workflow treats as a clean no-op. Dispatch is no longer gated on the `inventory` label, so a missing label costs nothing.
+- **The workflow creates the labels itself** (`gh label create --force`, idempotent) and backfills them onto the issue after a successful apply. A fresh fork works on its first issue, and the labels stay useful for filtering even though nothing depends on them anymore.
+
+The general lesson worth keeping: a gate whose failure mode is *silence* is worse than no gate. The author-association check has the same shape — a non-collaborator's form does nothing, with no feedback. Worth revisiting if outside collaborators ever need to file.
+
 ### Phase 4 — Photos + LLM description (~8–10 h) — *see §6*
 The re-inventory engine. Optional in the sense that Phases 1–3 stand alone, but this is what actually gets 2021 data refreshed to 2026.
 
