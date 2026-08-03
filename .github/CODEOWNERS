@@ -1,0 +1,10 @@
+# Inventory data and tooling require review from a maintainer before merge.
+# Enforced by branch protection on `main` (Settings > Branches > require review
+# from Code Owners). Either maintainer can approve and merge.
+*                 @sr320 @kubu4
+
+# Photos carry the most risk in a public repo -- see PHOTO_POLICY.md. Reviewers
+# are checking the image itself for accidentally-captured notebook pages,
+# screens, and sample manifests, not just the item list derived from it.
+/photos/          @sr320 @kubu4
+/descriptions/    @sr320 @kubu4
