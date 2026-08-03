@@ -100,6 +100,10 @@ ORDINALS = {
 # the site's category filter is actually useful; ~1 in 6 items still lands in
 # `other`, which is honest for a drawer containing a Nintendo.
 CATEGORY_RULES = [
+    # Documentation first: 'DNeasy blood and tissue handbook' is paperwork, not
+    # a kit and not a blood sample. Content words would otherwise win.
+    ("office", r"handbooks?|manuals?|instructions?|composition book|"
+               r"\bnotebooks?\b|\bhandouts?\b"),
     ("kit", r"\bkits?\b|mini ?prep|midi ?prep|maxi ?prep|micro ?prep|\bduet\b"),
     ("enzyme", r"polymerase|ligase|transcriptase|nuclease|dnase|rnase|proteinase|"
                r"restriction enzyme|\btaq\b|exonuclease|phosphatase|lysozyme|"
@@ -107,7 +111,10 @@ CATEGORY_RULES = [
     ("antibody", r"antibod|antisera|\bigg\b|\bighm\b|\bserum\b|immunoglobulin"),
     ("media", r"\bagar\b|\bbroth\b|\bmedia\b|\bmedium\b|\bfbs\b|\bsera\b|"
               r"\bfood\b|algae paste"),
-    ("sample", r"\bsamples?\b|\bgdna\b|extractions?|\baliquots?\b|libraries|"
+    # 'sample tubes' / 'sample boxes' are containers, not samples -- the
+    # lookahead keeps empty labware out of the sample category.
+    ("sample", r"\bsamples?\b(?!\s+(tubes?|boxes|bags?|racks?|containers?|"
+               r"storage|labels?))|\bgdna\b|extractions?|\baliquots?\b|libraries|"
                r"snap cap|histology slides|\bcdna\b|\brna\b(?!ase)\s+from|"
                r"\bblood\b|tissue in|in 100% ethanol|\bbcs plates?\b"),
     ("glassware", r"\bbottles?\b|\bflasks?\b|\bbeakers?\b|graduated cylinders?|"
@@ -339,22 +346,45 @@ class Migration:
             item_received = received
             name = part
 
-            date_match = PAREN_DATE_RE.search(name)
-            if date_match:
-                month, day, year = (int(g) for g in date_match.groups())
+            # Cells carry one or more parenthetical dates. The earliest becomes
+            # `received`; any others are commentary dates ('opened 8/8/2018')
+            # and are preserved in notes rather than dropped.
+            found = []
+            for match in PAREN_DATE_RE.finditer(name):
+                month, day, year = (int(g) for g in match.groups())
                 year += 2000 if year < 100 else 0
                 try:
-                    item_received = dt.date(year, month, day).isoformat()
+                    found.append(dt.date(year, month, day).isoformat())
                 except ValueError:
                     self.warnings.append(
                         (sheet, rownum, f"bad embedded date in {part!r}"))
-                name = PAREN_DATE_RE.sub("", name).strip()
+            if found:
+                found.sort()
+                item_received = found[0]
+                if len(found) > 1:
+                    extra = f"other dates noted: {', '.join(found[1:])}"
+                    item_notes = f"{item_notes}; {extra}".strip("; ") if item_notes else extra
+                name = PAREN_DATE_RE.sub("", name)
 
             quantity = ""
             qty_match = XQTY_RE.search(name)
             if qty_match:
                 quantity = qty_match.group(1)
                 name = XQTY_RE.sub("", name).strip()
+
+            # Removing embedded dates can leave unbalanced parentheses, and the
+            # source has its own ('2-Mercaptoethanol (8/6/2018) (opened
+            # (8/8/2018)'). Move the orphaned fragment to notes instead of
+            # shipping a name that ends mid-parenthesis.
+            name = re.sub(r"\s{2,}", " ", name).strip()
+            while name.count("(") > name.count(")"):
+                cut = name.rfind("(")
+                fragment = name[cut + 1:].strip(" ()")
+                name = name[:cut].strip(" ,;")
+                if fragment:
+                    item_notes = (f"{item_notes}; {fragment}".strip("; ")
+                                  if item_notes else fragment)
+            name = name.replace("()", "").strip(" ,;")
 
             owner = ""
             owner_match = OWNER_RE.search(name)
