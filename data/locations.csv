@@ -1,0 +1,174 @@
+location_id,room,kind,number,parent_id,label,notes
+209-CAB-01,209,cabinet,1,,Cabinet 1,
+209-CAB-02,209,cabinet,2,,Cabinet 2,
+209-CAB-09,209,cabinet,9,,Cabinet 9,
+209-CAB-10,209,cabinet,10,,Cabinet 10,
+209-CAB-11,209,cabinet,11,,Cabinet 11,
+209-CAB-12,209,cabinet,12,,Cabinet 12,
+209-CAB-13,209,cabinet,13,,Cabinet 13,
+209-CAB-14,209,cabinet,14,,Cabinet 14,recorded empty as of 2021-08-29
+209-CAB-15,209,cabinet,15,,Cabinet 15,
+209-CAB-16,209,cabinet,16,,Cabinet 16,
+209-CAB-25,209,cabinet,25,,Cabinet 25,no contents recorded in legacy spreadsheet
+209-CAB-26,209,cabinet,26,,Cabinet 26,no contents recorded in legacy spreadsheet
+209-CAB-27,209,cabinet,27,,Cabinet 27,
+209-CAB-38,209,cabinet,38,,Cabinet 38,
+209-CAB-39,209,cabinet,39,,Cabinet 39,
+209-CAB-48,209,cabinet,48,,Cabinet 48,
+209-CAB-49,209,cabinet,49,,Cabinet 49,
+209-CAB-50,209,cabinet,50,,Cabinet 50,
+209-CAB-51,209,cabinet,51,,Cabinet 51,
+209-CAB-52,209,cabinet,52,,Cabinet 52,
+209-CAB-53,209,cabinet,53,,Cabinet 53,
+209-CAB-54,209,cabinet,54,,Cabinet 54,
+209-CAB-55,209,cabinet,55,,Cabinet 55,
+209-DRW-03,209,drawer,3,,Drawer 3,
+209-DRW-04,209,drawer,4,,Drawer 4,
+209-DRW-05,209,drawer,5,,Drawer 5,
+209-DRW-06,209,drawer,6,,Drawer 6,
+209-DRW-07,209,drawer,7,,Drawer 7,
+209-DRW-08,209,drawer,8,,Drawer 8,
+209-DRW-17,209,drawer,17,,Drawer 17,
+209-DRW-18,209,drawer,18,,Drawer 18,
+209-DRW-19,209,drawer,19,,Drawer 19,
+209-DRW-20,209,drawer,20,,Drawer 20,
+209-DRW-21,209,drawer,21,,Drawer 21,
+209-DRW-22,209,drawer,22,,Drawer 22,recorded empty as of 2021-08-29
+209-DRW-28,209,drawer,28,,Drawer 28,
+209-DRW-29,209,drawer,29,,Drawer 29,recorded empty as of 2021-08-29
+209-DRW-30,209,drawer,30,,Drawer 30,recorded empty as of 2021-08-29
+209-DRW-31,209,drawer,31,,Drawer 31,
+209-DRW-32,209,drawer,32,,Drawer 32,recorded empty as of 2021-08-29
+209-DRW-33,209,drawer,33,,Drawer 33,
+209-DRW-34,209,drawer,34,,Drawer 34,
+209-DRW-35,209,drawer,35,,Drawer 35,
+209-DRW-36,209,drawer,36,,Drawer 36,recorded empty as of 2021-08-29
+209-DRW-37,209,drawer,37,,Drawer 37,
+209-DRW-40,209,drawer,40,,Drawer 40,
+209-DRW-41,209,drawer,41,,Drawer 41,
+209-DRW-42,209,drawer,42,,Drawer 42,
+209-DRW-43,209,drawer,43,,Drawer 43,
+209-DRW-44,209,drawer,44,,Drawer 44,
+209-DRW-45,209,drawer,45,,Drawer 45,
+209-DRW-46,209,drawer,46,,Drawer 46,
+209-DRW-47,209,drawer,47,,Drawer 47,
+209-FRIDGE,209,refrigerator,,,Refrigerator Rm 209,
+209-FRIDGE-DOOR-SHELF-1,209,shelf,Door Shelf 1,209-FRIDGE,Refrigerator Rm 209 shelf Door Shelf 1,
+209-FRIDGE-DOOR-SHELF-2,209,shelf,Door Shelf 2,209-FRIDGE,Refrigerator Rm 209 shelf Door Shelf 2,
+209-FRIDGE-DOOR-SHELF-3,209,shelf,Door Shelf 3,209-FRIDGE,Refrigerator Rm 209 shelf Door Shelf 3,
+209-FRIDGE-DOOR-SHELF-4,209,shelf,Door Shelf 4,209-FRIDGE,Refrigerator Rm 209 shelf Door Shelf 4,
+209-FRIDGE-DOOR-SHELF-5,209,shelf,Door Shelf 5,209-FRIDGE,Refrigerator Rm 209 shelf Door Shelf 5,
+209-FRIDGE-S01,209,shelf,1,209-FRIDGE,Refrigerator Rm 209 shelf 1,
+209-FRIDGE-S02,209,shelf,2,209-FRIDGE,Refrigerator Rm 209 shelf 2,
+209-FRIDGE-S03,209,shelf,3,209-FRIDGE,Refrigerator Rm 209 shelf 3,
+209-FRIDGE-S04,209,shelf,4,209-FRIDGE,Refrigerator Rm 209 shelf 4,
+209-FRIDGE-S05,209,shelf,5,209-FRIDGE,Refrigerator Rm 209 shelf 5,
+209-SHELF,209,shelf,,,Shelf unit Rm 209,
+209-SHELF-S01,209,shelf,1,209-SHELF,Shelf unit Rm 209 shelf 1,
+209-SHELF-S02,209,shelf,2,209-SHELF,Shelf unit Rm 209 shelf 2,
+209-SHELF-S03,209,shelf,3,209-SHELF,Shelf unit Rm 209 shelf 3,
+209-SHELF-S04,209,shelf,4,209-SHELF,Shelf unit Rm 209 shelf 4,
+209-SHELF-S05,209,shelf,5,209-SHELF,Shelf unit Rm 209 shelf 5,
+213-BIN-X01,213,bin,Storage 1,,Storage 1,
+213-BIN-X02,213,bin,Storage 2,,Storage 2,
+213-BIN-X03,213,bin,Storage 3,,Storage 3,
+213-BIN-X04,213,bin,Storage 4,,Storage 4,
+213-BIN-X05,213,bin,Storage 5,,Storage 5,
+213-BIN-X06,213,bin,Pathobiology tote #1,,Pathobiology tote #1,
+213-BIN-X07,213,bin,Pathobiology tote #2,,Pathobiology tote #2,
+213-BIN-X08,213,bin,Pathobiology tote #3,,Pathobiology tote #3,
+213-BIN-X09,213,bin,Unlabed light blue bin,,Unlabed light blue bin,
+213-BIN-X10,213,bin,Long clear bin on top of VWR fridge (1),,Long clear bin on top of VWR fridge (1),
+213-BIN-X11,213,bin,Long clear bin on top of VWR fridge (2),,Long clear bin on top of VWR fridge (2),
+213-BIN-X12,213,bin,Long clear bin on top of VWR fridge (3),,Long clear bin on top of VWR fridge (3),
+213-CAB-01,213,cabinet,1,,Cabinet 1,
+213-CAB-02,213,cabinet,2,,Cabinet 2,
+213-CAB-32,213,cabinet,32,,Cabinet 32,
+213-CAB-33,213,cabinet,33,,Cabinet 33,
+213-CAB-34,213,cabinet,34,,Cabinet 34,recorded empty as of 2021-08-29
+213-CAB-35,213,cabinet,35,,Cabinet 35,
+213-CAB-44,213,cabinet,44,,Cabinet 44,
+213-CAB-45,213,cabinet,45,,Cabinet 45,
+213-CAB-X01,213,cabinet,Glass cabinets next to metal lab counter and sink,,Glass cabinets next to metal lab counter and sink,
+213-DRW-03,213,drawer,3,,Drawer 3,recorded empty as of 2021-08-29
+213-DRW-04,213,drawer,4,,Drawer 4,recorded empty as of 2021-08-29
+213-DRW-05,213,drawer,5,,Drawer 5,recorded empty as of 2021-08-29
+213-DRW-06,213,drawer,6,,Drawer 6,recorded empty as of 2021-08-29
+213-DRW-07,213,drawer,7,,Drawer 7,no contents recorded in legacy spreadsheet
+213-DRW-08,213,drawer,8,,Drawer 8,no contents recorded in legacy spreadsheet
+213-DRW-09,213,drawer,9,,Drawer 9,no contents recorded in legacy spreadsheet
+213-DRW-10,213,drawer,10,,Drawer 10,no contents recorded in legacy spreadsheet
+213-DRW-11,213,drawer,11,,Drawer 11,no contents recorded in legacy spreadsheet
+213-DRW-12,213,drawer,12,,Drawer 12,no contents recorded in legacy spreadsheet
+213-DRW-13,213,drawer,13,,Drawer 13,no contents recorded in legacy spreadsheet
+213-DRW-14,213,drawer,14,,Drawer 14,no contents recorded in legacy spreadsheet
+213-DRW-15,213,drawer,15,,Drawer 15,recorded empty as of 2021-08-29
+213-DRW-16,213,drawer,16,,Drawer 16,
+213-DRW-17,213,drawer,17,,Drawer 17,
+213-DRW-18,213,drawer,18,,Drawer 18,recorded empty as of 2021-08-29
+213-DRW-19,213,drawer,19,,Drawer 19,no contents recorded in legacy spreadsheet
+213-DRW-20,213,drawer,20,,Drawer 20,recorded empty as of 2021-08-29
+213-DRW-21,213,drawer,21,,Drawer 21,recorded empty as of 2021-08-29
+213-DRW-22,213,drawer,22,,Drawer 22,recorded empty as of 2021-08-29
+213-DRW-23,213,drawer,23,,Drawer 23,recorded empty as of 2021-08-29
+213-DRW-24,213,drawer,24,,Drawer 24,recorded empty as of 2021-08-29
+213-DRW-25,213,drawer,25,,Drawer 25,recorded empty as of 2021-08-29
+213-DRW-26,213,drawer,26,,Drawer 26,recorded empty as of 2021-08-29
+213-DRW-27,213,drawer,27,,Drawer 27,
+213-DRW-28,213,drawer,28,,Drawer 28,
+213-DRW-29,213,drawer,29,,Drawer 29,
+213-DRW-30,213,drawer,30,,Drawer 30,recorded empty as of 2021-08-29
+213-DRW-31,213,drawer,31,,Drawer 31,recorded empty as of 2021-08-29
+213-DRW-36,213,drawer,36,,Drawer 36,
+213-DRW-37,213,drawer,37,,Drawer 37,
+213-DRW-38,213,drawer,38,,Drawer 38,recorded empty as of 2021-08-29
+213-DRW-39,213,drawer,39,,Drawer 39,recorded empty as of 2021-08-29
+213-DRW-40,213,drawer,40,,Drawer 40,
+213-DRW-41,213,drawer,41,,Drawer 41,recorded empty as of 2021-08-29
+213-DRW-42,213,drawer,42,,Drawer 42,
+213-DRW-43,213,drawer,43,,Drawer 43,
+213-DRW-46,213,drawer,46,,Drawer 46,
+213-DRW-47,213,drawer,47,,Drawer 47,
+213-DRW-48,213,drawer,48,,Drawer 48,
+213-DRW-49,213,drawer,49,,Drawer 49,
+213-DRW-50,213,drawer,50,,Drawer 50,
+213-DRW-51,213,drawer,51,,Drawer 51,
+213-DRW-52,213,drawer,52,,Drawer 52,
+213-DRW-53,213,drawer,53,,Drawer 53,
+213-DRW-54,213,drawer,54,,Drawer 54,
+213-DRW-55,213,drawer,55,,Drawer 55,
+213-DRW-56,213,drawer,56,,Drawer 56,
+213-DRW-57,213,drawer,57,,Drawer 57,
+213-DRW-58,213,drawer,58,,Drawer 58,
+213-DRW-59,213,drawer,59,,Drawer 59,
+213-DRW-60,213,drawer,60,,Drawer 60,
+213-DRW-61,213,drawer,61,,Drawer 61,
+213-F20,213,freezer,,,-20C freezer Rm 213,
+213-F20-S01,213,shelf,1,213-F20,-20C freezer Rm 213 shelf 1,recorded empty as of 2021-08-29
+213-F20-S02,213,shelf,2,213-F20,-20C freezer Rm 213 shelf 2,
+213-F20-S02-D08,213,drawer,8,213-F20-S02,-20C freezer Rm 213 shelf 2 drawer 8,
+213-F20-S02-D10,213,drawer,10,213-F20-S02,-20C freezer Rm 213 shelf 2 drawer 10,
+213-F20-S03,213,shelf,3,213-F20,-20C freezer Rm 213 shelf 3,
+213-F20-S03-D04,213,drawer,4,213-F20-S03,-20C freezer Rm 213 shelf 3 drawer 4,
+213-F20-S03-D09,213,drawer,9,213-F20-S03,-20C freezer Rm 213 shelf 3 drawer 9,
+213-F20-S04,213,shelf,4,213-F20,-20C freezer Rm 213 shelf 4,
+213-F20-S04-D05,213,drawer,5,213-F20-S04,-20C freezer Rm 213 shelf 4 drawer 5,
+213-F20-S04-D06,213,drawer,6,213-F20-S04,-20C freezer Rm 213 shelf 4 drawer 6,
+213-F20-S04-D07,213,drawer,7,213-F20-S04,-20C freezer Rm 213 shelf 4 drawer 7,
+213-F20-S05,213,shelf,5,213-F20,-20C freezer Rm 213 shelf 5,
+213-OTH-X01,213,other,NA,,Floor next to the shelves to the left of entryway 1,
+213-OTH-X02,213,other,NA,,Floor under lab bench next to metal sink 2,
+213-SH-S01,213,shelf,top,,Black shelving unit top,recorded empty as of 2021-08-29
+213-SH-S02,213,shelf,2nd,,Black shelving unit 2nd,
+213-SH-S03,213,shelf,3rd,,Black shelving unit 3rd,
+213-SH-S99,213,shelf,bottom,,Black shelving unit bottom,recorded empty as of 2021-08-29
+213-SHELF,213,shelf,,,Shelves left of entryway Rm 213,
+213-SHELF-S01,213,shelf,1,213-SHELF,Shelves left of entryway Rm 213 shelf 1,
+213-SHELF-S02,213,shelf,2,213-SHELF,Shelves left of entryway Rm 213 shelf 2,
+213-SHELF-S03,213,shelf,3,213-SHELF,Shelves left of entryway Rm 213 shelf 3,
+213-SHELF-S04,213,shelf,4,213-SHELF,Shelves left of entryway Rm 213 shelf 4,
+213-SHELF-S05,213,shelf,5,213-SHELF,Shelves left of entryway Rm 213 shelf 5,
+230-SH-X01,230,shelf,White shelf on wall,,White shelf on wall,
+230-SH-X02,230,shelf,Small brown bookshelf,,Small brown bookshelf,
+M80-SH-X01,M80,shelf,NA,,Shelves 1,
+M80-SH-X02,M80,shelf,NA,,Shelves 2,

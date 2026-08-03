@@ -1,0 +1,49 @@
+name: validate inventory data
+
+on:
+  pull_request:
+    paths:
+      - "data/**"
+      - "scripts/**"
+      - ".github/workflows/validate.yml"
+  push:
+    branches: [main]
+    paths:
+      - "data/**"
+      - "scripts/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # validate.py is stdlib-only on purpose, so there is nothing to install
+      # and nothing to break when a dependency moves.
+      - name: Validate data/*.csv
+        run: python3 scripts/validate.py
+
+      - name: Check migration is reproducible
+        if: github.event_name == 'pull_request'
+        run: |
+          pip install -q -r requirements.txt
+          python3 scripts/migrate_legacy.py --out /tmp/regen > /dev/null
+          # The legacy spreadsheet is frozen, so re-running the migration must
+          # reproduce byte-identical output. A diff here means either the
+          # migration script changed behaviour (re-run it and commit the
+          # result) or data/ was hand-edited in a way that is fine -- in which
+          # case this check should be dropped once real edits start landing.
+          if ! diff -q /tmp/regen/locations.csv data/locations.csv; then
+            echo "::warning::locations.csv differs from a fresh migration"
+          fi
+          if ! diff -q /tmp/regen/items.csv data/items.csv; then
+            echo "::warning::items.csv differs from a fresh migration (expected once hand edits land)"
+          fi
