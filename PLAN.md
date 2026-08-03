@@ -85,17 +85,18 @@ Concrete, minimal, extensible. Human-readable composite IDs beat surrogate keys 
 ### `data/locations.csv`
 
 ```csv
-location_id,room,kind,number,parent_id,label,notes
-209-CAB-01,209,cabinet,1,,"Cabinet 1, Rm 209",
-209-FRIDGE,209,refrigerator,,,"Refrigerator, Rm 209",4C
-209-FRIDGE-S1,209,shelf,1,209-FRIDGE,"Fridge shelf 1 (top)",
-213-F20,213,freezer,,,"-20C freezer, Rm 213",
-213-F20-S2-D8,213,drawer,8,213-F20,"-20C shelf 2, drawer 8",
+location_id,room,kind,number,parent_id,label,last_verified,verified_by,notes
+209-CAB-01,209,cabinet,1,,"Cabinet 1, Rm 209",2021-08-29,,
+209-FRIDGE,209,refrigerator,,,"Refrigerator, Rm 209",2021-08-29,,4C
+209-FRIDGE-S1,209,shelf,1,209-FRIDGE,"Fridge shelf 1 (top)",2021-08-29,,
+213-F20,213,freezer,,,"-20C freezer, Rm 213",2021-08-29,,
+213-F20-S2-D8,213,drawer,8,213-F20,"-20C shelf 2, drawer 8",2021-08-29,,
 ```
 
 - `location_id` is the stable key and the QR-code payload. Format `ROOM-UNIT[-SUB]`, uppercase, no spaces.
 - `kind` is a closed set: `cabinet | drawer | shelf | refrigerator | freezer | bench | floor | bin | other`.
 - `parent_id` gives nesting, so "everything in the -20" is one query.
+- **`last_verified` / `verified_by` exist on locations, not just items.** Without them, "I opened this drawer and it's still empty" has nowhere to live — there's no item row to stamp. That silently made the 46 locations with nothing recorded the one thing nobody could log, even though they're the cheapest checks in the lab. A location is verified independently of its contents.
 
 ### `data/items.csv`
 
@@ -172,6 +173,7 @@ Answer §7. Nothing below can be built without the repo-visibility and photo-pri
 - `.github/workflows/issue-to-pr.yml` parses the issue → edits `items.csv` → opens a PR → issue auto-closes on merge. Bad input never becomes a PR: the workflow comments the problem back on the issue and stops.
 - **Prefill instead of dropdowns.** The original plan was location dropdowns generated from `locations.csv`. Dropped: 173 options is miserable on a phone, and regenerating form YAML from data would mean the repo editing its own workflow files. Instead the site links to `issues/new?template=add-item.yml&location=213-DRW-27` — GitHub prefills by field `id`. Scan the QR sticker → tap **Add an item here** → the location is already filled in. Free-text locations are validated by the script, which suggests close matches on a typo.
 - Site gains three actions: **Add an item here** and **I verified this** on the location banner, **used up?** on every item row.
+- **A Locations view**, because the item list can't show a drawer that holds nothing. 46 locations had no items, so they were invisible on the site *and* rejected by the verify form — the two cheapest tasks in the lab were both impossible. The view lists every location with its item count, `last_verified`, and per-row **verify** / **add item** links, so an empty drawer is now searchable and one tap from being retired.
 - **Field labels are the contract.** GitHub renders forms as `### <label>` sections, so renaming a label silently stops the parser from seeing that field — no error, the value just vanishes. `scripts/check_forms.py` runs in CI and fails on any form field the parser doesn't read, any handler with no form, and any field missing an `id` (which would break prefill).
 - **Done when:** adding an item requires zero git knowledge and takes under 30 seconds. ✅
 
@@ -187,7 +189,7 @@ The re-inventory engine. Optional in the sense that Phases 1–3 stand alone, bu
 
 ### Phase 5 — Keep it alive (~4 h, incremental)
 - Scheduled Action: expiring/expired reagent report → opens a dated issue.
-- **Verification campaigns:** monthly Action picks the N locations with the oldest `last_verified` and opens a small, finishable issue ("verify these 3 drawers"). Staleness becomes a slow drip of 5-minute tasks instead of a dreaded annual audit.
+- **Verification campaigns:** monthly Action picks the N locations with the oldest `last_verified` **from `locations.csv`** and opens a small, finishable issue ("verify these 3 drawers"). Staleness becomes a slow drip of 5-minute tasks instead of a dreaded annual audit. Driving this off locations rather than items is what lets empty drawers into the rotation.
 - Dashboard panel on the site: items by room, % verified in last 12 months, count expired.
 - Optional: catalog-number lookup to auto-fill vendor/product name.
 

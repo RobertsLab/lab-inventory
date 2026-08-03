@@ -36,6 +36,10 @@ ITEM_FIELDS = [
     "vendor", "catalog_no", "lot", "received", "expires", "status",
     "last_verified", "verified_by", "owner", "source", "photo_id", "notes",
 ]
+LOCATION_FIELDS = [
+    "location_id", "room", "kind", "number", "parent_id", "label",
+    "last_verified", "verified_by", "notes",
+]
 CATEGORIES = {
     "kit", "reagent", "enzyme", "consumable", "sample", "equipment", "tool",
     "media", "antibody", "glassware", "office", "other",
@@ -92,7 +96,19 @@ def write_items(path: Path, rows: list[dict]) -> None:
 
 def read_locations(path: Path) -> dict[str, dict]:
     with path.open(newline="") as handle:
-        return {r["location_id"]: r for r in csv.DictReader(handle)}
+        reader = csv.DictReader(handle)
+        if reader.fieldnames != LOCATION_FIELDS:
+            raise SystemExit(f"{path}: unexpected header {reader.fieldnames}")
+        return {r["location_id"]: r for r in reader}
+
+
+def write_locations(path: Path, locations: dict[str, dict]) -> None:
+    # dict order is insertion order, which is file order, so rows stay put and
+    # the diff shows only the fields that actually changed.
+    with path.open("w", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=LOCATION_FIELDS)
+        writer.writeheader()
+        writer.writerows(locations.values())
 
 
 def resolve_location(raw: str, locations: dict[str, dict]) -> str:
@@ -284,11 +300,14 @@ def handle_verify(form: dict, rows: list[dict], locations: dict[str, dict],
     # not verifying the drawers inside it, and claiming otherwise would put
     # false confidence into the data.
     at_location = [r for r in rows if r["location_id"] == location_id]
-    if not at_location:
-        raise UserError(
-            f"`{location_id}` has no items recorded, so there's nothing to "
-            f"verify. If you found things there, file *Add an item* issues "
-            f"instead.")
+
+    # The location row is stamped whether or not it holds anything. "I opened
+    # this drawer and it is still empty" is real information, and before
+    # locations carried their own last_verified it had nowhere to live -- which
+    # made the 46 empty locations the one thing nobody could log.
+    location = locations[location_id]
+    location["last_verified"] = TODAY
+    location["verified_by"] = author
 
     missing_raw = (form.get("anything missing") or "").strip()
     missing_names = [
@@ -312,12 +331,18 @@ def handle_verify(form: dict, rows: list[dict], locations: dict[str, dict],
     body = [
         f"Verification pass from the issue form.\n",
         f"| field | value |\n|---|---|",
-        f"| location | `{location_id}` — {locations[location_id]['label']} |",
+        f"| location | `{location_id}` — {location['label']} |",
         f"| confirmed present | {len(verified)} |",
         f"| marked missing | {len(marked_missing)} |",
         f"| verified_by | {author} |",
         f"| last_verified | {TODAY} |\n",
     ]
+    if not at_location:
+        body.append(
+            "**Confirmed still empty.** Nothing was recorded here and nothing "
+            "was found, so only the location's own `last_verified` moved. This "
+            "is a real result, not a no-op — it retires a location from the "
+            "unknown pile.\n")
     if marked_missing:
         body.append("Marked missing:\n" + "\n".join(
             f"- `{r['item_id']}` {r['name']}" for r in marked_missing) + "\n")
@@ -389,6 +414,9 @@ def main() -> None:
         sys.exit(2)
 
     write_items(items_path, rows)
+    # Rewritten unconditionally: only the verify handler touches locations, and
+    # an unchanged rewrite is byte-identical, so git shows no diff.
+    write_locations(args.data / "locations.csv", locations)
     (args.out_dir / "pr_title.txt").write_text(title)
     (args.out_dir / "pr_body.md").write_text(
         f"{body}\n\nFiled by @{author} in #{number}.\n\n"

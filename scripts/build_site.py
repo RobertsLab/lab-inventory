@@ -71,6 +71,8 @@ def build(datadir: Path, template: Path, outdir: Path) -> dict:
                 "path": breadcrumb(loc["location_id"], by_id),
                 "notes": loc["notes"],
                 "count": counts.get(loc["location_id"], 0),
+                "lv": loc["last_verified"],
+                "vb": loc["verified_by"],
             }
             for loc in locations
         ],

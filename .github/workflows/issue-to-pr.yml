@@ -76,7 +76,9 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout -b "$BRANCH"
-          git add data/items.csv
+          # locations.csv changes too: a verification stamps the location row,
+          # which is the only record when the location holds nothing.
+          git add data/items.csv data/locations.csv
 
           # Build the message in a file rather than a heredoc. Item names come
           # from the issue and land in the subject line; keeping them out of

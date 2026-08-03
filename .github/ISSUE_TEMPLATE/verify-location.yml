@@ -13,6 +13,10 @@ body:
         Takes two minutes: open the drawer, compare against
         [the list](https://robertslab.github.io/lab-inventory/), file this.
 
+        **Empty drawers count.** If nothing is recorded here and you found
+        nothing, file it anyway — confirming a location is still empty retires
+        it from the unknown pile, and it's the fastest kind of check there is.
+
   # id: location -- prefillable via ?location=213-DRW-27
   - type: input
     id: location

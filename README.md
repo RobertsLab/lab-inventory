@@ -20,7 +20,7 @@ Development plan and architecture: **[PLAN.md](PLAN.md)** · Photo rules (public
 | File | What it is |
 |---|---|
 | [`data/items.csv`](data/items.csv) | One row per item. The inventory. |
-| [`data/locations.csv`](data/locations.csv) | Controlled vocabulary of physical places, nested via `parent_id`. |
+| [`data/locations.csv`](data/locations.csv) | Controlled vocabulary of physical places, nested via `parent_id`. Carries its own `last_verified`, so confirming a drawer is still empty counts as a real check. |
 | [`data/rooms.csv`](data/rooms.csv) | The declared scope: rooms 209, 213, 228, 230, and the -80˚C room. |
 | [`data/review_queue.csv`](data/review_queue.csv) | Legacy rows too ambiguous to migrate automatically. Each has a stated reason. |
 
@@ -46,6 +46,8 @@ You don't need git, and you don't need to know the file layout. File an issue:
 A bot turns the form into a pull request for a maintainer to merge. If something's wrong with the form — unknown location, a name matching five items — it comments on your issue and changes nothing.
 
 The fastest path is from the shelf itself: **scan the QR sticker → tap "Add an item here"**, and the location arrives already filled in.
+
+**Empty drawers are worth filing too.** 46 locations have nothing recorded; confirming one is still empty takes ten seconds and retires it from the unknown pile. Switch the site's last dropdown to **Locations** to find them — each row has its own verify link.
 
 Only the first three fields of the add form are required. A name and a location is already a useful record — don't stall on catalog numbers.
 

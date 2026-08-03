@@ -105,6 +105,11 @@ a.loc {
 }
 a.loc:hover { color: var(--accent); }
 .note { margin-top: 5px; font-size: 0.79rem; color: var(--dim); }
+.lidsm {
+  font: 0.76rem ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: var(--dim); font-weight: 400;
+}
+select:disabled { opacity: 0.45; }
 mark { background: #ffe9a8; color: #3b2c05; border-radius: 2px; padding: 0 1px; }
 @media (prefers-color-scheme: dark) { mark { background: #6b5518; color: #ffeec2; } }
 
@@ -136,6 +141,10 @@ footer a { color: var(--accent); }
     <select id="room" aria-label="Filter by room"></select>
     <select id="cat" aria-label="Filter by category"></select>
     <select id="status" aria-label="Filter by status"></select>
+    <select id="view" aria-label="Show items or locations">
+      <option value="items">Items</option>
+      <option value="locations">Locations</option>
+    </select>
   </div>
 </div>
 
@@ -190,7 +199,17 @@ const ROWS = DATA.items.map(it => {
 });
 
 const el = id => document.getElementById(id);
-const state = {q: '', room: '', cat: '', status: '', loc: ''};
+const state = {q: '', room: '', cat: '', status: '', loc: '', view: 'items'};
+
+// Locations get their own searchable rows. Without this, a drawer holding
+// nothing is invisible on the site -- and the empty drawers are exactly the
+// ones that most need someone to walk over and confirm them.
+const LOCROWS = DATA.locations.map(l => ({
+  loc: l,
+  hay: [l.id, l.label, l.path, l.kind, l.notes].filter(Boolean).join(' ').toLowerCase(),
+  name: (l.label || l.id).toLowerCase(),
+}));
+const STALE_BEFORE = new Date(Date.now() - 365 * 864e5).toISOString().slice(0, 10);
 
 function fillSelect(node, blank, values, labeller) {
   node.innerHTML = '';
@@ -227,7 +246,7 @@ function setup() {
   }
 
   el('q').addEventListener('input', e => { state.q = e.target.value; render(); });
-  for (const key of ['room', 'cat', 'status']) {
+  for (const key of ['room', 'cat', 'status', 'view']) {
     el(key).addEventListener('change', e => { state[key] = e.target.value; render(); });
   }
   window.addEventListener('hashchange', readHash);
@@ -284,9 +303,60 @@ function highlight(text, tokens) {
 const esc = s => s.replace(/[&<>"']/g, c =>
   ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
 
+function renderLocations(tokens, descendants) {
+  let hits = [];
+  for (const row of LOCROWS) {
+    if (state.room && row.loc.room !== state.room) continue;
+    if (descendants && !descendants.has(row.loc.id)) continue;
+    const points = tokens.length ? score(row, tokens) : 0;
+    if (points < 0) continue;
+    hits.push({row, points});
+  }
+  hits.sort((a, b) => b.points - a.points ||
+    a.row.loc.id.localeCompare(b.row.loc.id));
+
+  const empties = hits.filter(h => !h.row.loc.count).length;
+  el('count').innerHTML = `<b>${hits.length}</b> of ${LOCROWS.length} locations`
+    + (empties ? ` · ${empties} with nothing recorded` : '');
+
+  const list = el('results'), empty = el('empty');
+  if (!hits.length) {
+    list.innerHTML = '';
+    empty.hidden = false;
+    empty.innerHTML = tokens.length
+      ? `No location matches <b>${esc(state.q)}</b>.`
+      : 'No locations match these filters.';
+    return;
+  }
+  empty.hidden = true;
+
+  list.innerHTML = hits.slice(0, 400).map(({row}) => {
+    const l = row.loc;
+    const stale = !l.lv || l.lv < STALE_BEFORE;
+    const bits = [`<span class="chip${stale ? ' unverified' : ''}">${esc(l.kind)}</span>`];
+    bits.push(l.count
+      ? `<a class="loc" href="#${encodeURIComponent(l.id)}">${l.count} item${l.count === 1 ? '' : 's'}</a>`
+      : `<span>nothing recorded</span>`);
+    bits.push(`<span>checked ${esc(l.lv || 'never')}${l.vb ? ' by ' + esc(l.vb) : ''}</span>`);
+    bits.push(`<a class="act" target="_blank" rel="noopener" `
+      + `href="${formUrl('verify-location.yml', {location: l.id})}">verify</a>`);
+    bits.push(`<a class="act" target="_blank" rel="noopener" `
+      + `href="${formUrl('add-item.yml', {location: l.id})}">add item</a>`);
+    return `<li class="item">`
+      + `<div class="name">${highlight(l.label || l.id, tokens)}`
+      + ` <span class="lidsm">${esc(l.id)}</span></div>`
+      + `<div class="meta">${bits.join('')}</div>`
+      + (l.notes ? `<div class="note">${highlight(l.notes, tokens)}</div>` : '')
+      + `</li>`;
+  }).join('');
+}
+
 function render() {
   const tokens = state.q.toLowerCase().split(/\s+/).filter(Boolean);
   const descendants = state.loc ? descendantsOf(state.loc) : null;
+
+  el('cat').disabled = el('status').disabled = state.view === 'locations';
+  if (state.view === 'locations') return renderLocations(tokens, descendants);
 
   let hits = [];
   for (const row of ROWS) {
