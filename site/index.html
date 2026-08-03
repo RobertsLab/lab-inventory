@@ -62,10 +62,20 @@ select {
 .locbar .lid {
   font: 600 1.02rem/1.35 ui-monospace, SFMono-Regular, Menlo, monospace;
 }
-.locbar .clear {
-  display: inline-block; margin-top: 7px; font-size: 0.8rem;
-  color: var(--accent); text-decoration: none; font-weight: 600;
+.locbar .acts {
+  display: flex; flex-wrap: wrap; gap: 7px; margin-top: 9px;
 }
+.locbar .acts a {
+  font-size: 0.8rem; text-decoration: none; font-weight: 600;
+  padding: 7px 11px; border-radius: 7px; background: var(--panel);
+  border: 1px solid var(--accent); color: var(--accent);
+}
+.locbar .acts a.plain { border-color: var(--line); color: var(--dim); }
+.meta a.act {
+  color: var(--dim); text-decoration: none; font-size: 0.76rem;
+  border-bottom: 1px dotted var(--dim);
+}
+.meta a.act:hover { color: var(--accent); }
 
 .stale {
   margin: 12px 0 0; padding: 10px 13px; font-size: 0.82rem;
@@ -132,7 +142,11 @@ footer a { color: var(--accent); }
 <div id="locbar" class="locbar">
   <div class="path" id="locpath"></div>
   <div class="lid" id="loclabel"></div>
-  <a class="clear" href="#">← show everything</a>
+  <div class="acts">
+    <a id="act-add" href="#">＋ Add an item here</a>
+    <a id="act-verify" href="#">✓ I verified this</a>
+    <a class="plain" href="#">← Everything</a>
+  </div>
 </div>
 
 <div id="stale" class="stale" hidden></div>
@@ -151,6 +165,15 @@ footer a { color: var(--accent); }
 
 <script>
 const DATA = /*__INVENTORY_DATA__*/null;
+
+// Issue forms accept prefill via query params keyed on the form field `id`, so
+// a scanned QR sticker leads straight to a form that already knows where you
+// are standing. This is the whole 30-second write path.
+const REPO = 'https://github.com/RobertsLab/lab-inventory';
+const formUrl = (template, params) =>
+  `${REPO}/issues/new?template=${template}&`
+  + Object.entries(params).map(([k, v]) =>
+      `${k}=${encodeURIComponent(v)}`).join('&');
 
 const locById = new Map(DATA.locations.map(l => [l.id, l]));
 const roomById = new Map(DATA.rooms.map(r => [r.id, r]));
@@ -221,6 +244,8 @@ function readHash() {
     const loc = locById.get(state.loc);
     el('locpath').textContent = loc.path || '';
     el('loclabel').textContent = `${loc.id} — ${loc.label}`;
+    el('act-add').href = formUrl('add-item.yml', {location: loc.id});
+    el('act-verify').href = formUrl('verify-location.yml', {location: loc.id});
   }
   render();
 }
@@ -308,6 +333,8 @@ function render() {
     if (it.r) bits.push(`<span>rec’d ${esc(it.r)}</span>`);
     if (it.e) bits.push(`<span>expires ${esc(it.e)}</span>`);
     if (it.o) bits.push(`<span>${esc(it.o)}</span>`);
+    bits.push(`<a class="act" target="_blank" rel="noopener" `
+      + `href="${formUrl('update-status.yml', {item: it.id})}">used up?</a>`);
     return `<li class="item"><div class="name">`
       + `${highlight(it.n || '', tokens)}</div>`
       + `<div class="meta">${bits.join('')}</div>`

@@ -1,0 +1,51 @@
+name: Mark something consumed, low, or missing
+description: You used the last of something, it's running out, or it isn't where the inventory says.
+title: "Update status"
+labels: ["inventory", "inventory:status"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Consumed items keep their row rather than being deleted — the history is
+        worth more than a tidy file.
+
+  # id: item -- prefillable via ?item=itm-00123
+  - type: input
+    id: item
+    attributes:
+      label: Item
+      description: >
+        The item id (`itm-00123`) is exact and always works. A name works too,
+        as long as it matches only one thing — otherwise you'll get a comment
+        listing the candidates.
+      placeholder: itm-00123
+    validations:
+      required: true
+
+  - type: dropdown
+    id: status
+    attributes:
+      label: New status
+      options:
+        - consumed
+        - low
+        - missing
+        - discarded
+        - present
+      default: 0
+    validations:
+      required: true
+
+  - type: input
+    id: location
+    attributes:
+      label: Location
+      description: Only needed to disambiguate when you're going by name and the same thing exists in several places.
+      placeholder: 213-DRW-27
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
+      description: Appended to the item's existing notes.
+      placeholder: Last box used on the Aug 2026 extractions. Reordered.
