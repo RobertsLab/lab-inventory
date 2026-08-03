@@ -182,7 +182,9 @@ Two things to know about how this is wired:
 - **The generated PR gets no separate check run.** A PR opened with `GITHUB_TOKEN` doesn't trigger other workflows, so `validate.yml` won't fire on it. The issue-to-pr workflow therefore runs `validate.py` itself *before* pushing — bad data never reaches a PR. If you'd rather see a check on the PR, swap in a PAT.
 - **Editing the issue rebuilds the branch from scratch** (force-push), so hand-written commits on an `inv/*` branch would be discarded. The generated PR body says so. Correct things in the issue, or merge and follow up separately.
 
-Because the repo is public, the workflow only runs for `OWNER`/`MEMBER`/`COLLABORATOR` authors. Without that, anyone could open issues that spawn branches and PRs. Review still gates merging either way — the author check is about spam, not privilege.
+**Anyone can file a form and have it become a PR** — there is no author gate. Merging still requires a maintainer, so an unwanted submission costs a closed PR, not bad data. This was a deliberate call (2026-08-03) after an author gate caused two silent failures; spam is the accepted cost.
+
+If a gate is ever wanted back, do **not** use `author_association`, and note this repo is public so the permission endpoint returns `read` for everyone on the internet — only `admin`/`maintain`/`write` mean real access.
 
 #### The label trap, and why dispatch no longer depends on labels
 
@@ -195,7 +197,11 @@ Two changes so it can't recur:
 - **The body is the contract, not the label.** `apply_issue.py` identifies its own forms from their headings (`### New status` → status, `### Anything missing` → verify, `### Item name` → add) and exits 3 for anything that isn't one, which the workflow treats as a clean no-op. Dispatch is no longer gated on the `inventory` label, so a missing label costs nothing.
 - **The workflow creates the labels itself** (`gh label create --force`, idempotent) and backfills them onto the issue after a successful apply. A fresh fork works on its first issue, and the labels stay useful for filtering even though nothing depends on them anymore.
 
-The general lesson worth keeping: a gate whose failure mode is *silence* is worse than no gate. The author-association check has the same shape — a non-collaborator's form does nothing, with no feedback. Worth revisiting if outside collaborators ever need to file.
+The general lesson worth keeping: **a gate whose failure mode is silence is worse than no gate.**
+
+It then happened a second time, which is why there is no author gate at all now. The replacement check used `author_association`, which looks like a permission field and isn't: **it reports `NONE` for org members whose organization membership is private.** kubu4 — a repo admin — was refused, while sr320 went through with identical repo permissions, purely because one membership is public and the other isn't. The REST API reports `MEMBER` for the very same issue, so the two sources genuinely disagree.
+
+Whether a lab member's form worked therefore depended on a personal profile setting nobody knew was involved. Diagnosing it needed a log line printing the value; a job-level `if:` can't print anything, which is why every condition that decides whether real work happens now lives in a step.
 
 ### Phase 4 — Photos + LLM description (~8–10 h) — *see §6*
 The re-inventory engine. Optional in the sense that Phases 1–3 stand alone, but this is what actually gets 2021 data refreshed to 2026.
