@@ -31,6 +31,24 @@ h1 { font-size: 1.3rem; margin: 0 0 2px; letter-spacing: -0.01em; }
 .sub a { color: var(--dim); }
 
 /* Sticky search so it stays reachable while scrolling a long result list. */
+.intro {
+  background: var(--panel); border: 1px solid var(--line);
+  border-radius: var(--radius); padding: 14px 15px; margin-bottom: 4px;
+}
+.intro p { margin: 0 0 8px; font-size: 0.86rem; }
+.intro p:last-child { margin-bottom: 0; }
+.intro .fine { font-size: 0.78rem; color: var(--dim); }
+/* The default link blue is close to unreadable on the dark panel. */
+.intro .fine a { color: var(--accent); }
+.intro .acts { display: flex; flex-wrap: wrap; gap: 7px; margin: 11px 0; }
+.intro .acts a {
+  flex: 1 1 auto; text-align: center; white-space: nowrap;
+  font-size: 0.82rem; font-weight: 600; text-decoration: none;
+  padding: 9px 12px; border-radius: 7px;
+  border: 1px solid var(--accent); color: var(--accent);
+}
+.intro .acts a:hover { background: var(--accent-soft); }
+
 .searchbar {
   position: sticky; top: 0; z-index: 20; background: var(--bg);
   padding: 10px 0; border-bottom: 1px solid var(--line);
@@ -82,6 +100,8 @@ select {
   background: var(--warn-soft); color: var(--warn);
   border: 1px solid currentColor; border-radius: var(--radius);
 }
+/* Once anything has been checked this is progress rather than a warning. */
+.stale.progress { background: var(--accent-soft); color: var(--accent); }
 
 ul.results { list-style: none; margin: 0; padding: 0; }
 li.item {
@@ -133,6 +153,33 @@ footer a { color: var(--accent); }
   </div>
 </header>
 
+<!-- Hard-coded hrefs rather than built by formUrl(), so the calls to action
+     still work if the script fails for any reason. -->
+<div class="intro">
+  <p><strong>Treat this list as a strong lead, not the truth.</strong> It came
+  from a spreadsheet last updated in 2021 and nothing in it has been checked
+  since. If you open a drawer and it doesn't match, that's expected — saying so
+  takes about 30 seconds.</p>
+
+  <p>The most useful thing you can do is <strong>verify a location</strong>:
+  open one drawer, compare it to what's listed, file what you found. Confirming
+  a drawer is still <em>empty</em> counts too, and it's the fastest check there
+  is. Also worth filing — anything <strong>used up or missing</strong>, and
+  anything <strong>not listed</strong> (a name and a location is enough).</p>
+
+  <div class="acts">
+    <a href="https://github.com/RobertsLab/lab-inventory/issues/new?template=verify-location.yml">✓ I verified a location</a>
+    <a href="https://github.com/RobertsLab/lab-inventory/issues/new?template=update-status.yml">✗ Used up or missing</a>
+    <a href="https://github.com/RobertsLab/lab-inventory/issues/new?template=add-item.yml">＋ Add an item</a>
+  </div>
+
+  <p class="fine">Fastest route is from the shelf — scan a drawer's QR sticker
+  and the form already knows where you are. Everything you file becomes a pull
+  request for a maintainer to review, so nothing you send can break the list.
+  You'll need to be in the
+  <a href="https://github.com/RobertsLab">RobertsLab org</a>.</p>
+</div>
+
 <div class="searchbar">
   <input id="q" type="search" autocomplete="off" autocapitalize="off"
          spellcheck="false" placeholder="Search items, kits, locations…"
@@ -164,9 +211,10 @@ footer a { color: var(--accent); }
 <div class="empty" id="empty" hidden></div>
 
 <footer>
-  Every item still says <b>unverified</b> until someone lays eyes on it.
+  Switch <b>Items</b> to <b>Locations</b> above to browse by drawer — including
+  the 46 with nothing recorded, which are the quickest to check off.
   See the <a href="https://github.com/RobertsLab/lab-inventory/blob/main/PLAN.md">plan</a>
-  for how verification works. ·
+  for how this all fits together. ·
   <a href="labels.html">printable QR labels</a>
 </footer>
 
@@ -236,14 +284,19 @@ function setup() {
   const statuses = [...new Set(DATA.items.map(i => i.s).filter(Boolean))].sort();
   fillSelect(el('status'), 'Any status', statuses, s => s);
 
-  const unverified = DATA.items.filter(i => i.s === 'unverified').length;
-  if (unverified) {
-    const box = el('stale');
-    box.hidden = false;
-    box.textContent = `${unverified} of ${DATA.items.length} items have never been `
-      + `verified since the spreadsheet was migrated. Treat locations as a `
-      + `strong hint, not a promise.`;
-  }
+  // Progress, not a warning. The intro above already makes the "don't trust
+  // this yet" point, so repeating it here just says the same thing twice --
+  // these are the two numbers the intro can't know, and they climb as people
+  // work. Locations are counted separately because an empty drawer can be
+  // verified without any item row changing.
+  const itemsOk = DATA.items.filter(i => (i.lv || '') >= STALE_BEFORE).length;
+  const locsOk = DATA.locations.filter(l => (l.lv || '') >= STALE_BEFORE).length;
+  const box = el('stale');
+  box.hidden = false;
+  box.innerHTML = `Checked in the last year: <b>${itemsOk} of ${DATA.items.length}</b> `
+    + `items and <b>${locsOk} of ${DATA.locations.length}</b> locations. `
+    + `Everything else still reflects the 2021 spreadsheet.`;
+  if (itemsOk || locsOk) box.classList.add('progress');
 
   el('q').addEventListener('input', e => { state.q = e.target.value; render(); });
   for (const key of ['room', 'cat', 'status', 'view']) {
