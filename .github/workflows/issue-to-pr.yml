@@ -21,14 +21,18 @@ jobs:
     # and PRs. Merge still requires human review either way -- this is about
     # spam, not privilege.
     #
-    # Deliberately NOT gated on the `inventory` label. Issue forms silently drop
-    # labels that don't exist in the repo yet, so a label gate here turns a
-    # missing label into an invisible no-op -- no PR, no comment, no error, and
-    # a confused person who thinks they filed something. apply_issue.py
-    # recognises its own forms from the body and exits 3 for anything else.
-    if: >
-      contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'),
-               github.event.issue.author_association)
+    # There is deliberately NO job-level `if:` here.
+    #
+    # It used to gate on the `inventory` label, which broke because issue forms
+    # silently drop labels that don't exist yet. Replacing that with an
+    # author_association check then broke differently: every run skipped, with
+    # no log to say why, because a skipped job produces none. Two silent
+    # failures from the same construct is enough -- a job-level expression is
+    # invisible when it goes wrong, and that is exactly the property we don't
+    # want on the one path lab members touch.
+    #
+    # Both checks now happen in steps, where the values are printed and a
+    # refusal can be explained to the person who filed the issue.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -37,9 +41,26 @@ jobs:
         with:
           python-version: "3.12"
 
+      # Printed so a future "nothing happened" is one click to diagnose.
+      - name: Check author access
+        id: auth
+        env:
+          ASSOC: ${{ github.event.issue.author_association }}
+        run: |
+          echo "author_association=$ASSOC"
+          case "$ASSOC" in
+            OWNER|MEMBER|COLLABORATOR)
+              echo "ok=true" >> "$GITHUB_OUTPUT" ;;
+            *)
+              echo "ok=false" >> "$GITHUB_OUTPUT"
+              echo "::notice::author_association=$ASSOC has no repo access" ;;
+          esac
+
       # Idempotent, and the reason a fresh clone of this repo works: the forms
-      # can only apply labels that already exist.
+      # can only apply labels that already exist. Runs only for known authors so
+      # a stranger's issue can't trigger label writes.
       - name: Ensure the inventory labels exist
+        if: steps.auth.outputs.ok == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -68,10 +89,35 @@ jobs:
         if: steps.apply.outputs.code == '3'
         run: echo "::notice::not an inventory form issue; nothing to do"
 
+      # They filed a real form but can't be acted on. Say so, rather than
+      # leaving them to assume it worked.
+      - name: Explain that the author needs access
+        if: steps.auth.outputs.ok != 'true' && steps.apply.outputs.code != '3'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NUMBER: ${{ github.event.issue.number }}
+          ASSOC: ${{ github.event.issue.author_association }}
+        run: |
+          # A file rather than an inline --body: this is a two-paragraph message
+          # and a heredoc keeps the quoting readable. $ASSOC is a GitHub enum,
+          # not user text, so expanding it here is safe.
+          cat > "$RUNNER_TEMP/noaccess.md" <<EOF
+          Thanks for filing this — the form looks right, but I can't turn it into
+          a pull request automatically because your account isn't a member of the
+          [RobertsLab org](https://github.com/RobertsLab) yet. GitHub reports you
+          as \`$ASSOC\`.
+
+          Ask @sr320 or @kubu4 for an invite, then re-open this and it'll go
+          through. They can also apply it by hand in the meantime — **nothing is
+          lost, everything you typed is still here.**
+          EOF
+          gh issue comment "$NUMBER" --body-file "$RUNNER_TEMP/noaccess.md"
+          echo "::notice::commented about missing access on #$NUMBER"
+
       # Backfill what the form couldn't apply, so filtering and future tooling
       # can rely on the labels even though dispatch no longer does.
       - name: Label the issue if the form couldn't
-        if: steps.apply.outputs.code == '0'
+        if: steps.apply.outputs.code == '0' && steps.auth.outputs.ok == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NUMBER: ${{ github.event.issue.number }}
@@ -81,7 +127,7 @@ jobs:
             --add-label "$(cat "$RUNNER_TEMP/pr/action.txt")"
 
       - name: Report a form problem back to the issue
-        if: steps.apply.outputs.code == '2'
+        if: steps.apply.outputs.code == '2' && steps.auth.outputs.ok == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NUMBER: ${{ github.event.issue.number }}
@@ -105,11 +151,11 @@ jobs:
       # GITHUB_TOKEN does not trigger other workflows, so validate.yml will not
       # run on it -- this step is the gate.
       - name: Validate the result
-        if: steps.apply.outputs.code == '0'
+        if: steps.apply.outputs.code == '0' && steps.auth.outputs.ok == 'true'
         run: python3 scripts/validate.py
 
       - name: Open the pull request
-        if: steps.apply.outputs.code == '0'
+        if: steps.apply.outputs.code == '0' && steps.auth.outputs.ok == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NUMBER: ${{ github.event.issue.number }}
