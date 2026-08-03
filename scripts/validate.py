@@ -32,6 +32,7 @@ LOCATION_FIELDS = [
 REVIEW_FIELDS = [
     "reason", "sheet", "row", "location_id", "raw_text", "suggestion", "notes",
 ]
+ROOM_FIELDS = ["room", "label", "notes"]
 
 CATEGORIES = {
     "kit", "reagent", "enzyme", "consumable", "sample", "equipment", "tool",
@@ -95,18 +96,35 @@ class Validator:
             self.warn(filename, row, f"{field}={value!r} is in the future")
 
     def run(self) -> int:
+        rooms = self.load("rooms.csv", ROOM_FIELDS)
         locations = self.load("locations.csv", LOCATION_FIELDS)
         items = self.load("items.csv", ITEM_FIELDS)
         self.load("review_queue.csv", REVIEW_FIELDS)
         if self.errors:
             return self.report()
 
-        location_ids = self.check_locations(locations)
+        room_ids = self.check_rooms(rooms)
+        location_ids = self.check_locations(locations, room_ids)
         self.check_items(items, location_ids)
-        self.summarize(items, locations)
+        self.summarize(items, locations, rooms)
         return self.report()
 
-    def check_locations(self, locations: list[dict]) -> set[str]:
+    def check_rooms(self, rooms: list[dict]) -> set[str]:
+        seen: set[str] = set()
+        for offset, row in enumerate(rooms):
+            line = offset + 2
+            if not row["room"]:
+                self.error("rooms.csv", line, "empty room")
+                continue
+            if row["room"] in seen:
+                self.error("rooms.csv", line, f"duplicate room {row['room']!r}")
+            if not row["label"]:
+                self.warn("rooms.csv", line,
+                          f"room {row['room']!r} has no label")
+            seen.add(row["room"])
+        return seen
+
+    def check_locations(self, locations: list[dict], room_ids: set[str]) -> set[str]:
         seen: set[str] = set()
         for offset, row in enumerate(locations):
             line = offset + 2
@@ -126,6 +144,10 @@ class Validator:
                            f"kind {row['kind']!r} not in {sorted(KINDS)}")
             if not row["room"]:
                 self.error("locations.csv", line, "empty room")
+            elif row["room"] not in room_ids:
+                self.error("locations.csv", line,
+                           f"room {row['room']!r} is not declared in rooms.csv "
+                           "(add it there if it is in scope)")
             if not row["label"]:
                 self.warn("locations.csv", line,
                           f"{lid} has no label; QR stickers will be unreadable")
@@ -203,10 +225,19 @@ class Validator:
                 self.error("items.csv", line,
                            "source=photo-llm requires a photo_id for provenance")
 
-    def summarize(self, items: list[dict], locations: list[dict]) -> None:
+    def summarize(self, items: list[dict], locations: list[dict],
+                  rooms: list[dict]) -> None:
         """Non-fatal health signals -- the anti-staleness dashboard in text form."""
         if not items:
             return
+        # A declared room with no locations is an inventorying to-do, surfaced
+        # on every run so it doesn't get forgotten.
+        occupied = {l["room"] for l in locations}
+        for room in rooms:
+            if room["room"] not in occupied:
+                self.warn("rooms.csv", 0,
+                          f"room {room['room']!r} ({room['label']}) is in scope "
+                          "but has no locations yet -- needs an inventory pass")
         cutoff = (dt.date.today() - dt.timedelta(days=365)).isoformat()
         stale = [i for i in items if (i["last_verified"] or "0000") < cutoff]
         unverified = [i for i in items if i["status"] == "unverified"]
@@ -216,6 +247,10 @@ class Validator:
 
         print(f"items                {len(items)}")
         print(f"locations            {len(locations)}")
+        print(f"rooms                {len(rooms)}")
+        print("locations per room:  " + ", ".join(
+            f"{r['room']}={sum(1 for l in locations if l['room'] == r['room'])}"
+            for r in rooms))
         print(f"unverified           {len(unverified)} "
               f"({100 * len(unverified) // len(items)}%)")
         print(f"not verified in 1y   {len(stale)} "

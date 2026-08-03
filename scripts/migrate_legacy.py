@@ -46,6 +46,7 @@ LOCATION_FIELDS = [
 REVIEW_FIELDS = [
     "reason", "sheet", "row", "location_id", "raw_text", "suggestion", "notes",
 ]
+ROOM_FIELDS = ["room", "label", "notes"]
 
 # Rooms get short codes so location_ids stay ID-safe. "-80˚C room" would make
 # a hostile identifier.
@@ -54,6 +55,18 @@ ROOM_CODES = {
     "213": "213",
     "230": "230",
     "-80˚c room": "M80",
+}
+
+# The declared scope of the inventory. Rooms are listed here even when the
+# legacy spreadsheet has nothing for them -- 228 is in scope but was never
+# recorded, so it starts with zero locations and gets populated by walking in
+# with a phone (Phase 4) rather than by migration.
+ROOMS = {
+    "209": ("Room 209", ""),
+    "213": ("Room 213", ""),
+    "228": ("Room 228", "in scope; no locations inventoried yet"),
+    "230": ("Room 230", ""),
+    "M80": ("-80˚C room", "shared cold room"),
 }
 
 KIND_MAP = {
@@ -526,10 +539,20 @@ class Migration:
                 writer.writeheader()
                 writer.writerows(rows)
 
+        dump("rooms.csv", ROOM_FIELDS,
+             [{"room": room, "label": label, "notes": notes}
+              for room, (label, notes) in sorted(ROOMS.items())])
         dump("locations.csv", LOCATION_FIELDS,
              sorted(self.locations.values(), key=lambda r: r["location_id"]))
         dump("items.csv", ITEM_FIELDS, self.items)
         dump("review_queue.csv", REVIEW_FIELDS, self.review)
+
+        # A room in scope with nothing in it is a to-do, not an error.
+        used = {loc["room"] for loc in self.locations.values()}
+        for room in sorted(set(ROOMS) - used):
+            print(f"note: room {room} is in scope but has no locations yet")
+        for room in sorted(used - set(ROOMS)):
+            print(f"WARNING: room {room} has locations but is not declared in ROOMS")
 
     def report(self) -> None:
         print(f"locations     {len(self.locations):>5}")

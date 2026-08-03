@@ -21,7 +21,10 @@ Development plan and architecture: **[PLAN.md](PLAN.md)** · Photo rules (public
 |---|---|
 | [`data/items.csv`](data/items.csv) | One row per item. The inventory. |
 | [`data/locations.csv`](data/locations.csv) | Controlled vocabulary of physical places, nested via `parent_id`. |
+| [`data/rooms.csv`](data/rooms.csv) | The declared scope: rooms 209, 213, 228, 230, and the -80˚C room. |
 | [`data/review_queue.csv`](data/review_queue.csv) | Legacy rows too ambiguous to migrate automatically. Each has a stated reason. |
+
+Coverage today is uneven — `209=70, 213=99, 228=0, 230=2, M80=2` locations. **Room 228 is in scope but appears nowhere in the legacy spreadsheet**, so it has nothing to migrate and needs an inventory pass; `validate.py` warns about it on every run until it does.
 
 `location_id` is the stable key — `209-CAB-01`, `213-F20-S02-D08`, `209-FRIDGE-DOOR-SHELF-1`. It's built to be short because it becomes a URL fragment and a QR-sticker payload.
 

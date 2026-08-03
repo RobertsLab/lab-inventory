@@ -244,10 +244,21 @@ phone photo ──► photos/inbox/  (drag-drop into a PR, or an upload issue)
 
 2. **Maintainers: `@sr320` and `@kubu4`**, both with merge rights. Implemented as a `CODEOWNERS` file requiring review from either. Two people is the right number — enough that nobody is a single point of failure, few enough that review actually happens.
 
+3. **Scope is five rooms: 209, 213, 228, 230, and the -80˚C room.** Declared explicitly in `data/rooms.csv` rather than left implicit in whatever the spreadsheet happened to contain, and enforced — `validate.py` fails if a location names an undeclared room.
+
+   **Room 228 appears nowhere in the legacy spreadsheet**, so it starts with zero locations. There is nothing to migrate for it; it gets populated by walking in with a phone. Until then `validate.py` emits a standing warning on every run so an in-scope-but-unrecorded room can't quietly be forgotten:
+
+   ```
+   WARN  rooms.csv: room '228' (Room 228) is in scope but has no locations yet -- needs an inventory pass
+   ```
+
+   Current coverage: `209=70, 213=99, 228=0, 230=2, M80=2` locations. Rooms 230 and M80 have only 2 each, so they're really placeholders too — the shelves are recorded, their contents barely.
+
+   Room labels are deliberately generic (`Room 228`, not a guessed purpose). Fill them in with something more useful when convenient.
+
 ### Still open (not blocking Phase 1)
 
-3. **Freezer boxes: in or out of scope?** Sample-level tracking (-80 boxes, positions, individual DNA extractions) is a genuinely different problem — thousands of rows, needs plate/position coordinates, and usually wants its own tool. I recommend **v1 tracks the box, not the tube**, with a hook to add sample-level later.
-4. **Rooms 230 and the -80 room** appear in the spreadsheet with 2 rows each. In scope, or someone else's space? Migrated for now; trivial to drop.
+4. **Freezer boxes: in or out of scope?** Sample-level tracking (-80 boxes, positions, individual DNA extractions) is a genuinely different problem — thousands of rows, needs plate/position coordinates, and usually wants its own tool. I recommend **v1 tracks the box, not the tube**, with a hook to add sample-level later.
 5. **Item owners.** The spreadsheet tags several storage bins "- Goetz". An `owner` column is in the schema and populated where the legacy data made it explicit. Worth confirming this is a concept you want to keep tracking.
 
 ---
