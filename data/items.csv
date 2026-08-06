@@ -1,6 +1,6 @@
 item_id,name,category,location_id,quantity,unit,vendor,catalog_no,lot,received,expires,status,last_verified,verified_by,owner,source,photo_id,notes
 itm-00001,Plastic graduated cylinders,glassware,209-CAB-01,,,,,,,,unverified,2021-08-29,,,legacy-xlsx,,
-itm-00002,Plastic boxes to hold sample tubes,consumable,209-CAB-02,,,,,,,,unverified,2021-08-29,,,legacy-xlsx,,
+itm-00002,Plastic boxes to hold sample tubes,consumable,209-CAB-02,,,,,,,,present,2026-08-06,maddybernstein,,legacy-xlsx,,
 itm-00003,"Qubit RNA and DNA buffer, qubit assay tubes, DNA/RNA dye",equipment,209-DRW-03,,,,,,,,unverified,2021-08-29,,,legacy-xlsx,,
 itm-00004,Syringes and needles,consumable,209-DRW-04,,,,,,,,unverified,2021-08-29,,,legacy-xlsx,,
 itm-00005,Shaker supplies,equipment,209-DRW-05,,,,,,,,unverified,2021-08-29,,,legacy-xlsx,,
