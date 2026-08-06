@@ -51,7 +51,7 @@ location_id,room,kind,number,parent_id,label,last_verified,verified_by,notes
 209-DRW-44,209,drawer,44,,Drawer 44,2021-08-29,,
 209-DRW-45,209,drawer,45,,Drawer 45,2021-08-29,,
 209-DRW-46,209,drawer,46,,Drawer 46,2021-08-29,,
-209-DRW-47,209,drawer,47,,Drawer 47,2021-08-29,,
+209-DRW-47,209,drawer,47,,Drawer 47,2026-08-06,maddybernstein,
 209-FRIDGE,209,refrigerator,,,Refrigerator Rm 209,2021-08-29,,
 209-FRIDGE-DOOR-SHELF-1,209,shelf,Door Shelf 1,209-FRIDGE,Refrigerator Rm 209 shelf Door Shelf 1,2021-08-29,,
 209-FRIDGE-DOOR-SHELF-2,209,shelf,Door Shelf 2,209-FRIDGE,Refrigerator Rm 209 shelf Door Shelf 2,2021-08-29,,
