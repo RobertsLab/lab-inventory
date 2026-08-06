@@ -7,6 +7,8 @@ location_id,room,kind,number,parent_id,label,last_verified,verified_by,notes
 209-CAB-12,209,cabinet,12,,Cabinet 12,2021-08-29,,
 209-CAB-13,209,cabinet,13,,Cabinet 13,2021-08-29,,
 209-CAB-14,209,cabinet,14,,Cabinet 14,2021-08-29,,recorded empty as of 2021-08-29
+209-CAB-15,209,cabinet,15,,Cabinet 15,2021-08-29,,
+209-CAB-16,209,cabinet,16,,Cabinet 16,2026-08-06,maddybernstein,
 209-CAB-15,209,cabinet,15,,Cabinet 15,2026-08-06,maddybernstein,
 209-CAB-16,209,cabinet,16,,Cabinet 16,2021-08-29,,
 209-CAB-25,209,cabinet,25,,Cabinet 25,2021-08-29,,no contents recorded in legacy spreadsheet
