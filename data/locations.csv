@@ -2,7 +2,7 @@ location_id,room,kind,number,parent_id,label,last_verified,verified_by,notes
 209-CAB-01,209,cabinet,1,,Cabinet 1,2021-08-29,,
 209-CAB-02,209,cabinet,2,,Cabinet 2,2026-08-06,maddybernstein,
 209-CAB-09,209,cabinet,9,,Cabinet 9,2021-08-29,,
-209-CAB-10,209,cabinet,10,,Cabinet 10,2021-08-29,,
+209-CAB-10,209,cabinet,10,,Cabinet 10,2026-08-06,maddybernstein,
 209-CAB-11,209,cabinet,11,,Cabinet 11,2021-08-29,,
 209-CAB-12,209,cabinet,12,,Cabinet 12,2021-08-29,,
 209-CAB-13,209,cabinet,13,,Cabinet 13,2021-08-29,,
