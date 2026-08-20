@@ -1,0 +1,141 @@
+name: merge guard
+
+# Nothing re-checks a bot PR between the moment it is opened and the moment
+# someone merges it.
+#
+# issue-to-pr validates before the PR exists -- that is deliberate, because a
+# PR opened with GITHUB_TOKEN does not trigger validate.yml, so it is the only
+# check that branch will ever get. The gap is that the check is against main
+# as it was at PR-creation time. Main then moves, and nothing looks again.
+#
+# That gap is not theoretical. Merge two inv/* branches cut from the same base
+# and git text-merges data/items.csv: an edited row's old and new copy both
+# survive as separate lines, and next_item_id() (max+1 over the branch's own
+# copy) hands the same id to two different items. Neither branch is wrong on
+# its own, both merge without a conflict, and main ends up invalid. That is
+# how main acquired seven duplicate ids and itm-00500 assigned twice.
+#
+# So: re-run validate.py on the RESULT of merging each open PR into main,
+# every time main moves, and publish the verdict as a commit status on the
+# PR's head. Make `merge-guard` a required status check in branch protection
+# (Settings -> Branches) and a stale branch can no longer be merged.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: "PR number to check; blank checks every open PR"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  pull-requests: read
+  statuses: write
+
+# Every run is a full sweep of every open PR, so a newer run completely
+# supersedes an older one and cancelling loses nothing.
+#
+# This job stays a single job walking a loop, never a matrix. Filing 43 issues
+# in one afternoon already put this repo into runner starvation once -- 11 runs
+# died with "not acquired by Runner of type hosted" and roughly half the issues
+# never got a run at all. A fan-out here would reproduce that on every merge.
+concurrency:
+  group: merge-guard
+  cancel-in-progress: true
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Trial merges need real history, not a depth-1 cone.
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Re-validate every open PR against current main
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ONLY_PR: ${{ github.event.inputs.pr }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+
+          if [ -n "$ONLY_PR" ]; then
+            gh pr view "$ONLY_PR" --json number,headRefOid,title --jq '[.] | .[]' \
+              > prs.jsonl
+          else
+            gh pr list --base main --state open --limit 100 \
+              --json number,headRefOid,title --jq '.[]' > prs.jsonl
+          fi
+
+          total=$(wc -l < prs.jsonl | tr -d ' ')
+          echo "checking $total open PR(s) against $(git rev-parse --short HEAD)"
+
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          {
+            echo "### merge guard"
+            echo
+            echo "Merging each open PR into \`main\` at \`$(git rev-parse --short HEAD)\` and validating the result."
+            echo
+            echo "| PR | verdict | detail |"
+            echo "|---|---|---|"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          red=0
+          while read -r pr; do
+            num=$(jq -r .number <<<"$pr")
+            sha=$(jq -r .headRefOid <<<"$pr")
+
+            # refs/pull/N/head rather than the branch name: it resolves for
+            # fork PRs too, and it is the exact commit the status attaches to.
+            git fetch -q origin "refs/pull/$num/head:refs/pr/$num"
+            git checkout -q --detach origin/main
+
+            if ! git merge -q --no-commit --no-ff "refs/pr/$num" >/dev/null 2>&1; then
+              state=failure
+              detail="conflicts with main -- regenerate the branch from the issue"
+            elif out=$(python3 scripts/validate.py 2>&1); then
+              state=success
+              detail="merges cleanly and validates"
+            else
+              state=failure
+              # First FAIL line is the useful one; a status description is
+              # capped at 140 characters.
+              detail=$(printf '%s\n' "$out" | grep -m1 'FAIL' | sed 's/^ *//' | cut -c1-130)
+              [ -n "$detail" ] || detail="validate.py rejected the merge result"
+            fi
+
+            git merge --abort >/dev/null 2>&1 || true
+            git reset -q --hard
+            git clean -qfd
+
+            gh api -X POST "repos/$GITHUB_REPOSITORY/statuses/$sha" \
+              -f state="$state" \
+              -f context="merge-guard" \
+              -f description="$detail" \
+              -f target_url="$RUN_URL" >/dev/null
+
+            echo "| #$num | $state | $detail |" >> "$GITHUB_STEP_SUMMARY"
+            if [ "$state" = failure ]; then
+              red=$((red + 1))
+              echo "::warning::PR #$num would not merge cleanly: $detail"
+            fi
+            echo "#$num -> $state ($detail)"
+          done < prs.jsonl
+
+          echo >> "$GITHUB_STEP_SUMMARY"
+          echo "$red of $total open PR(s) need regenerating." >> "$GITHUB_STEP_SUMMARY"
+
+          # Deliberately does not fail the job. A stale PR is not a problem
+          # with main, and failing here would paint main's own check list red
+          # for something main did nothing wrong. The verdict lives on the PR,
+          # which is where someone can act on it.
