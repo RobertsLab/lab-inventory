@@ -87,6 +87,23 @@ python3 scripts/migrate_legacy.py
 
 Note that re-running the migration **overwrites `data/`**, discarding hand edits. It's a one-time tool kept for reproducibility and for re-tuning the item categorizer; once real edits start landing, `items.csv` is the source of truth and the spreadsheet is history.
 
+## Why a stale bot PR can't merge
+
+Two bot branches cut from the same `main` will both merge without a conflict and still leave the data invalid: git text-merges `items.csv`, so an edited row's old and new copy both survive, and `next_item_id()` hands the same id to two different items. Neither branch is wrong on its own.
+
+`validate.py` alone doesn't catch this, because a PR opened with `GITHUB_TOKEN` doesn't trigger `validate.yml` — the only check a bot branch gets is the one `issue-to-pr` runs *before* the PR exists. Main then moves and nothing looks again.
+
+So `merge-guard.yml` merges every open PR into current `main` and re-runs `validate.py` on the result, every time `main` moves, and reports the verdict as a `merge-guard` commit status on the PR. A PR that has gone stale turns red without anyone touching it.
+
+**This only blocks a merge if `merge-guard` is a required status check** — Settings → Branches → branch protection for `main` → *Require status checks to pass* → add `merge-guard`. Without that it's advisory.
+
+A red `merge-guard` on a bot PR means regenerate, not rebase: the branch is fully derived from its issue, so close the PR and re-trigger the issue rather than resolving anything by hand.
+
+```bash
+gh workflow run merge-guard.yml -f pr=123   # re-check one PR
+gh workflow run merge-guard.yml             # re-check all open PRs
+```
+
 ## Conventions
 
 - Dates are ISO 8601, and partial dates are allowed where that's the honest precision: `2019`, `2019-11`, `2019-11-27`.

@@ -8,6 +8,9 @@ permissions:
   contents: write
   pull-requests: write
   issues: write
+  # To seed the merge-guard status on the branch this workflow creates; see
+  # the last step and .github/workflows/merge-guard.yml.
+  statuses: write
 
 # One run per issue; a quick edit shouldn't race its own earlier run.
 concurrency:
@@ -133,6 +136,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NUMBER: ${{ github.event.issue.number }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           BRANCH="inv/issue-$NUMBER"
           TITLE=$(cat "$RUNNER_TEMP/pr/pr_title.txt")
@@ -176,3 +180,18 @@ jobs:
               --body "Opened $URL for review. It'll close this issue when merged."
             echo "created $URL"
           fi
+
+          # Seed the merge-guard status the PR would otherwise not have.
+          #
+          # merge-guard re-checks open PRs when main moves, so a PR opened
+          # while main is idle would sit with no status at all -- and once
+          # `merge-guard` is a required check, no status blocks the merge
+          # indefinitely. This branch was just built on top of current main
+          # and validate.py passed on the result two steps ago, so success is
+          # the honest verdict right now. If main moved in the seconds since,
+          # the next push to main re-checks it and overwrites this.
+          gh api -X POST "repos/$GITHUB_REPOSITORY/statuses/$(git rev-parse HEAD)" \
+            -f state="success" \
+            -f context="merge-guard" \
+            -f description="validated against main at branch creation" \
+            -f target_url="$RUN_URL" >/dev/null
