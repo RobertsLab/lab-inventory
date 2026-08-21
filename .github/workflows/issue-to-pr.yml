@@ -164,11 +164,20 @@ jobs:
 
           # An edited issue re-runs this job; update the existing PR instead of
           # failing on a duplicate.
-          if gh pr view "$BRANCH" --json number >/dev/null 2>&1; then
-            gh pr edit "$BRANCH" \
+          #
+          # It has to be an OPEN pr. `gh pr view <branch>` resolves a closed one
+          # just as happily, so once an issue's pr had been closed this took the
+          # update path forever: it force-pushed a correctly rebuilt branch, ran
+          # `gh pr edit` against the closed pr, printed "updated", and exited 0
+          # without ever opening anything. Issue #9 sat in that state through
+          # two replay attempts, each reporting success.
+          EXISTING=$(gh pr list --head "$BRANCH" --state open --limit 1 \
+                       --json number --jq '.[].number')
+          if [ -n "$EXISTING" ]; then
+            gh pr edit "$EXISTING" \
               --title "$TITLE" \
               --body-file "$RUNNER_TEMP/pr/pr_body.md"
-            URL=$(gh pr view "$BRANCH" --json url --jq .url)
+            URL=$(gh pr view "$EXISTING" --json url --jq .url)
             echo "updated $URL"
           else
             URL=$(gh pr create \
