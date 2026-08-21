@@ -23,6 +23,13 @@ name: merge guard
 on:
   push:
     branches: [main]
+  # A human PR needs its status the moment it opens. Without this it would
+  # have no `merge-guard` status until main next moved, and once the context
+  # is a required check "no status" blocks the merge -- so a quiet week would
+  # leave every PR unmergeable. Bot PRs never reach this trigger (GITHUB_TOKEN
+  # does not start workflows); issue-to-pr seeds their status instead.
+  pull_request:
+    types: [opened, synchronize, reopened]
   workflow_dispatch:
     inputs:
       pr:
@@ -35,15 +42,17 @@ permissions:
   pull-requests: read
   statuses: write
 
-# Every run is a full sweep of every open PR, so a newer run completely
-# supersedes an older one and cancelling loses nothing.
+# Sweeps share one group: each is a full pass over every open PR, so a newer
+# one completely supersedes an older one and cancelling loses nothing. A
+# pull_request run gets its own group per PR -- it only checks that one PR, so
+# letting it cancel a sweep would strand everything else on a stale status.
 #
 # This job stays a single job walking a loop, never a matrix. Filing 43 issues
 # in one afternoon already put this repo into runner starvation once -- 11 runs
 # died with "not acquired by Runner of type hosted" and roughly half the issues
 # never got a run at all. A fan-out here would reproduce that on every merge.
 concurrency:
-  group: merge-guard
+  group: merge-guard-${{ github.event.pull_request.number || 'sweep' }}
   cancel-in-progress: true
 
 jobs:
@@ -62,7 +71,8 @@ jobs:
       - name: Re-validate every open PR against current main
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ONLY_PR: ${{ github.event.inputs.pr }}
+          # Empty on a push, so a push sweeps everything.
+          ONLY_PR: ${{ github.event.inputs.pr || github.event.pull_request.number }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           set -euo pipefail
@@ -118,11 +128,15 @@ jobs:
             git reset -q --hard
             git clean -qfd
 
+            # Tolerated rather than fatal: GITHUB_TOKEN is read-only on a PR
+            # from a fork, so the POST is refused there. Better to finish the
+            # sweep and warn than to abort it over one unpostable status.
             gh api -X POST "repos/$GITHUB_REPOSITORY/statuses/$sha" \
               -f state="$state" \
               -f context="merge-guard" \
               -f description="$detail" \
-              -f target_url="$RUN_URL" >/dev/null
+              -f target_url="$RUN_URL" >/dev/null \
+              || echo "::warning::could not post merge-guard status on #$num ($state: $detail)"
 
             echo "| #$num | $state | $detail |" >> "$GITHUB_STEP_SUMMARY"
             if [ "$state" = failure ]; then
