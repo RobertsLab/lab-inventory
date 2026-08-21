@@ -46,6 +46,12 @@ CATEGORIES = {
 }
 STATUSES = {"present", "low", "consumed", "discarded", "missing", "unverified"}
 ITEM_ID_RE = re.compile(r"^itm-\d{5}$")
+
+# The date a verification gets stamped with. Set from the issue's creation date
+# in main() -- when someone opens a drawer and files the form the same day these
+# are identical, but they are not the same thing, and re-running an old issue
+# must not claim the shelf was looked at today. Falls back to today's date when
+# the payload has no timestamp.
 TODAY = dt.date.today().isoformat()
 
 # GitHub renders an unfilled optional field as this literal string.
@@ -416,6 +422,14 @@ def main() -> None:
     labels = {l["name"] for l in issue.get("labels", [])}
     author = issue.get("user", {}).get("login", "unknown")
     number = issue.get("number", 0)
+
+    # Date the record from when the form was filed, not from when this happens
+    # to run. Normally the same day; not the same day when an issue is replayed
+    # weeks later because its original run never produced a PR.
+    global TODAY
+    created = (issue.get("created_at") or "")[:10]
+    if re.match(r"^\d{4}-\d{2}-\d{2}$", created):
+        TODAY = created
 
     form = parse_form(issue.get("body", ""))
     args.out_dir.mkdir(parents=True, exist_ok=True)
