@@ -104,6 +104,14 @@ gh workflow run merge-guard.yml -f pr=123   # re-check one PR
 gh workflow run merge-guard.yml             # re-check all open PRs
 ```
 
+To rebuild the PRs for issues that don't have a good one — either they never got one, or merge-guard has marked theirs red:
+
+```bash
+python3 scripts/replay_issues.py --dry-run   # see the plan first
+```
+
+It re-triggers each issue one at a time and waits for the PR to appear before starting the next. **Pace it.** Filing form issues in a rapid burst is what broke this repo once already: Actions quietly stopped creating workflow runs partway through, and no error appears anywhere — not on the issue, not in the Actions tab. Run `--only red` after a batch of merges to regenerate whatever went stale.
+
 ## Conventions
 
 - Dates are ISO 8601, and partial dates are allowed where that's the honest precision: `2019`, `2019-11`, `2019-11-27`.
