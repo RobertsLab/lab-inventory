@@ -81,7 +81,7 @@ location_id,room,kind,number,parent_id,label,last_verified,verified_by,notes
 213-BIN-X10,213,bin,Long clear bin on top of VWR fridge (1),,Long clear bin on top of VWR fridge (1),2021-08-29,,
 213-BIN-X11,213,bin,Long clear bin on top of VWR fridge (2),,Long clear bin on top of VWR fridge (2),2021-08-29,,
 213-BIN-X12,213,bin,Long clear bin on top of VWR fridge (3),,Long clear bin on top of VWR fridge (3),2021-08-29,,
-213-CAB-01,213,cabinet,1,,Cabinet 1,2021-08-29,,
+213-CAB-01,213,cabinet,1,,Cabinet 1,2026-08-25,maddybernstein,
 213-CAB-02,213,cabinet,2,,Cabinet 2,2021-08-29,,
 213-CAB-32,213,cabinet,32,,Cabinet 32,2021-08-29,,
 213-CAB-33,213,cabinet,33,,Cabinet 33,2021-08-29,,
