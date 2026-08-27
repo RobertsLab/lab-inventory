@@ -20,7 +20,7 @@ location_id,room,kind,number,parent_id,label,last_verified,verified_by,notes
 209-CAB-51,209,cabinet,51,,Cabinet 51,2021-08-29,,
 209-CAB-52,209,cabinet,52,,Cabinet 52,2021-08-29,,
 209-CAB-53,209,cabinet,53,,Cabinet 53,2021-08-29,,
-209-CAB-54,209,cabinet,54,,Cabinet 54,2021-08-29,,
+209-CAB-54,209,cabinet,54,,Cabinet 54,2026-08-25,maddybernstein,
 209-CAB-55,209,cabinet,55,,Cabinet 55,2026-08-25,maddybernstein,
 209-DRW-03,209,drawer,3,,Drawer 3,2026-08-06,maddybernstein,
 209-DRW-04,209,drawer,4,,Drawer 4,2021-08-29,,
@@ -115,7 +115,7 @@ location_id,room,kind,number,parent_id,label,last_verified,verified_by,notes
 213-DRW-25,213,drawer,25,,Drawer 25,2021-08-29,,recorded empty as of 2021-08-29
 213-DRW-26,213,drawer,26,,Drawer 26,2021-08-29,,recorded empty as of 2021-08-29
 213-DRW-27,213,drawer,27,,Drawer 27,2021-08-29,,
-213-DRW-28,213,drawer,28,,Drawer 28,2021-08-29,,
+213-DRW-28,213,drawer,28,,Drawer 28,2026-08-25,maddybernstein,
 213-DRW-29,213,drawer,29,,Drawer 29,2021-08-29,,
 213-DRW-30,213,drawer,30,,Drawer 30,2021-08-29,,recorded empty as of 2021-08-29
 213-DRW-31,213,drawer,31,,Drawer 31,2021-08-29,,recorded empty as of 2021-08-29
