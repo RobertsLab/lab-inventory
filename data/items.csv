@@ -149,7 +149,7 @@ itm-00147,Serological pipets,consumable,209-CAB-55,,,,,,,,unverified,2021-08-29,
 itm-00148,chemicals,other,209-CAB-55,,,,,,,,unverified,2021-08-29,,,legacy-xlsx,,
 itm-00149,syringes,consumable,209-CAB-55,,,,,,,,unverified,2021-08-29,,,legacy-xlsx,,
 itm-00150,"Upper: empty. Lower: histology blocks x2 (one completely empty, one with samples inside)",sample,213-CAB-01,,,,,,,,unverified,2021-08-29,,,legacy-xlsx,,
-itm-00151,"Upper: histology slide cases. Lower: histology block x1 (empty), empty histology cassettes",consumable,213-CAB-02,,,,,,,,unverified,2021-08-29,,,legacy-xlsx,,
+itm-00151,"Upper: histology slide cases. Lower: histology block x1 (empty), empty histology cassettes",consumable,213-CAB-02,,,,,,,,present,2026-08-25,maddybernstein,,legacy-xlsx,,
 itm-00152,Used notebooks,office,213-DRW-16,,,,,,,,unverified,2021-08-29,,,legacy-xlsx,,
 itm-00153,Notes,other,213-DRW-17,,,,,,,,unverified,2021-08-29,,,legacy-xlsx,,
 itm-00154,"eDNA, gDNA, & cDNA samples, Primer stocks, misc. samples",sample,213-DRW-27,,,,,,,,unverified,2021-08-29,,,legacy-xlsx,,Small freezer
